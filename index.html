@@ -102,6 +102,53 @@
   .notices li::before{ content:"* "; }
   .app__meta{ display:flex; align-items:center; gap: var(--space-sm); flex-wrap:wrap; }
   .app__meta-text{ font-family: var(--font-mono); font-size:11.5px; color: var(--muted); white-space:nowrap; }
+  .who{
+    display:inline-flex; align-items:center; gap:6px; height:30px; padding: 0 4px 0 10px;
+    background: var(--surface); border:1px solid var(--hairline); border-radius: var(--radius-pill); font-size:0.8125rem;
+  }
+  .who[hidden]{ display:none; }
+  .who__team{ color: var(--muted); }
+  .who__name{ font-weight:600; }
+  .who__change{
+    border:none; background:none; color: var(--primary); font-size:0.75rem; font-weight:600;
+    padding: 4px 6px; border-radius:4px; cursor:pointer;
+  }
+  .who__change:hover{ background: var(--primary-soft); }
+  .who__change:focus-visible{ outline:2px solid var(--primary-focus); outline-offset:1px; }
+
+  /* ---------- 변경 이력 ---------- */
+  .log{ margin-top: var(--space-lg); background: var(--surface); border:1px solid var(--hairline); border-radius: var(--radius); padding: 16px 20px 18px; }
+  .log__head{ display:flex; align-items:center; gap: var(--space-xs); margin-bottom: var(--space-sm); }
+  .log__head h2{ font-size:1rem; }
+  .count-pill{
+    font-family: var(--font-mono); font-size:11.5px; font-weight:600; color: var(--muted);
+    background: var(--surface-pearl); border:1px solid var(--hairline); border-radius: var(--radius-pill); padding: 2px 8px;
+  }
+  .log__list{
+    list-style:none; margin:0; padding:0; display:grid; gap:0;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); column-gap: var(--space-lg);
+  }
+  .log__item{ padding: 8px 0; border-bottom:1px solid var(--divider); min-width:0; }
+  .log__msg{ font-size:0.8125rem; font-weight:600; }
+  .log__target{ font-weight:400; color: var(--muted); margin-left:6px; }
+  .log__meta{ margin-top:2px; font-family: var(--font-mono); font-size:11px; color: var(--muted); }
+  .log__empty{ color: var(--muted); font-size:0.8125rem; padding: 8px 0; }
+  .log__more{ margin-top: var(--space-sm); }
+  .log__more[hidden]{ display:none; }
+
+  /* ---------- 작성자 입력 ---------- */
+  .user-dialog{ width: min(92vw, 420px); }
+  .user-dialog .dialog__body p{ margin-bottom: var(--space-md); }
+  .user-fields{ display:grid; gap: var(--space-sm); }
+  .field{ display:block; }
+  .field__label{ display:block; font-size:0.8125rem; font-weight:600; margin-bottom:6px; }
+  .input{
+    width:100%; height:40px; padding: 0 12px; border:1px solid var(--hairline); border-radius: var(--radius-sm);
+    background: var(--surface); outline: 2px solid transparent; outline-offset:1px;
+  }
+  .input:focus{ outline-color: var(--primary-focus); }
+  .input[aria-invalid="true"]{ border-color: var(--error); }
+  .field__error{ min-height:1.2em; margin: 8px 0 0 !important; font-size:0.75rem; color: var(--error-ink) !important; }
   .sync{ display:inline-flex; align-items:center; gap:6px; }
   .sync::before{ content:""; width:7px; height:7px; border-radius:50%; background: var(--text-disabled); flex-shrink:0; }
   .sync[data-state="online"]::before{ background: var(--success); }
@@ -180,7 +227,7 @@
     background: var(--surface); border:1px solid var(--hairline); border-radius: var(--radius);
     overflow:auto; max-height: calc(100vh - 210px); min-height: 320px;
   }
-  table.sheet{ border-collapse:separate; border-spacing:0; width:100%; min-width: 1764px; font-size:0.8125rem; line-height:1.4; table-layout:fixed; }
+  table.sheet{ border-collapse:separate; border-spacing:0; width:100%; min-width: 1812px; font-size:0.8125rem; line-height:1.4; table-layout:fixed; }
   .sheet thead th{
     position: sticky; z-index: 2; background: var(--surface-pearl);
     text-align:left; font-size:0.75rem; font-weight:600; color: var(--muted-80);
@@ -275,6 +322,8 @@
   }
   .check-box:hover{ background: var(--success-soft); }
   .check-box input{ width:16px; height:16px; margin:0; accent-color: var(--success); cursor:pointer; }
+  .ok-stamp{ display:block; margin-top:2px; font-size:10.5px; line-height:1.35; color: var(--success-ink); word-break:keep-all; }
+  .ok-stamp:empty{ display:none; }
   .sheet td.row-no{
     text-align:center; padding-top:10px; font-family: var(--font-mono); font-size:0.75rem;
     font-variant-numeric: tabular-nums; color: var(--muted);
@@ -392,6 +441,10 @@
       <ul class="notices" id="notices"></ul>
     </div>
     <div class="app__meta">
+      <span class="who" id="whoami" hidden>
+        <span class="who__team" id="whoTeam"></span><span class="who__name" id="whoName"></span>
+        <button type="button" class="who__change" id="changeUserBtn">변경</button>
+      </span>
       <span class="app__meta-text sync" id="saveStatus" aria-live="polite"></span>
       <span class="app__meta-text">v<span id="appVersion"></span></span>
     </div>
@@ -426,7 +479,7 @@
         <col style="width:180px">
         <col style="width:110px">
         <col style="width:80px">
-        <col style="width:52px">
+        <col style="width:100px">
         <col style="width:150px">
         <col style="width:80px">
       </colgroup>
@@ -451,12 +504,46 @@
           <th>추가 내용 기재</th>
           <th class="g-start g-tint">팀</th>
           <th class="g-tint">담당자</th>
-          <th class="g-tint c-center th-tight th-wrap">담당자<br>확인</th>
+          <th class="g-tint c-center th-wrap">담당자<br>확인</th>
         </tr>
       </thead>
     </table>
   </div>
+
+  <section class="log" aria-labelledby="logTitle">
+    <div class="log__head">
+      <h2 id="logTitle">변경 이력</h2>
+      <span class="count-pill" id="logCount"></span>
+    </div>
+    <ol class="log__list" id="logList"></ol>
+    <button type="button" class="btn btn--ghost btn--sm log__more" id="logMore" hidden>더 보기</button>
+  </section>
 </div>
+
+<dialog id="userDialog" class="user-dialog" aria-labelledby="userTitle">
+  <form id="userForm" novalidate>
+    <div class="dialog__body">
+      <h3 id="userTitle">누가 작성하나요?</h3>
+      <p>입력한 팀·이름은 변경 이력과 담당자 확인에 기록됩니다. 이 브라우저에 기억되어 다음부터는 묻지 않습니다.</p>
+      <div class="user-fields">
+        <label class="field">
+          <span class="field__label">팀</span>
+          <input class="input" id="userTeam" name="team" list="teamOptions" autocomplete="organization" placeholder="예: 디지털커머스팀" required>
+        </label>
+        <label class="field">
+          <span class="field__label">담당자</span>
+          <input class="input" id="userName" name="name" autocomplete="name" placeholder="예: 홍길동" required>
+        </label>
+      </div>
+      <p class="field__error" id="userError" role="alert"></p>
+      <datalist id="teamOptions"></datalist>
+    </div>
+    <div class="dialog__foot">
+      <button type="button" class="btn btn--ghost btn--sm" id="userCancel" hidden>취소</button>
+      <button type="submit" class="btn btn--primary btn--sm">시작하기</button>
+    </div>
+  </form>
+</dialog>
 
 <dialog id="confirmDialog" class="confirm-dialog" aria-labelledby="confirmTitle">
   <form method="dialog">
@@ -488,14 +575,17 @@
   var SUPABASE_ANON_KEY = "sb_publishable_5D_GcAx0M0GKvIq0fBpnUg_KA0u2My2";
   var REMOTE = SUPABASE_URL.indexOf("YOUR_SUPABASE") !== 0;
 
-  var T_SEC = "eec_sections", T_ROW = "eec_rows";
+  var T_SEC = "eec_sections", T_ROW = "eec_rows", T_LOG = "eec_logs";
   var SEC_COLS = ["sort_order", "name", "note"];
-  var ROW_COLS = ["sort_order", "urgent", "cat", "sub", "checks", "area", "extend", "reply", "team", "owner", "owner_ok", "memo"];
+  var ROW_COLS = ["sort_order", "urgent", "cat", "sub", "checks", "area", "extend", "reply", "team", "owner",
+                  "owner_ok", "owner_ok_by", "owner_ok_at", "memo"];
   var STORAGE_KEY = "event-extension-check:v1";
+  var USER_KEY = "event-extension-check:user";
   var COLS = 14;
+  var LOG_LIMIT = 300, LOG_PAGE = 30;
 
   var SEED = JSON.parse(document.getElementById("seedData").textContent);
-  var state = { title: SEED.title, notices: SEED.notices, sections: [] };
+  var state = { title: SEED.title, notices: SEED.notices, sections: [], logs: [] };
   var onlyUrgent = false;
   var loaded = false;
 
@@ -512,6 +602,15 @@
   }
   function pad(n){ return (n < 10 ? "0" : "") + n; }
   function fmtTime(d){ return pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds()); }
+  // "YYYY-MM-DD HH:MM" in local time, 24-hour — used by the log and the 담당자 확인 stamp.
+  function fmtStamp(iso){
+    var d = new Date(iso);
+    if(isNaN(d)){ return ""; }
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
+  function newId(){
+    return (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : uid("l");
+  }
   function icon(id){ return '<svg class="icon" aria-hidden="true"><use href="#i-' + id + '"/></svg>'; }
   function bySortOrder(a, b){ return (a.sort_order - b.sort_order) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0); }
   function nextOrder(arr){ return arr.reduce(function(m, x){ return Math.max(m, x.sort_order); }, -1) + 1; }
@@ -527,7 +626,7 @@
   }
   function blankRow(order){
     return { id: uid("r"), sort_order: order || 0, urgent:false, cat:"", sub:"", checks:[blankCheck()],
-             area:"", extend:"", reply:"", team:"", owner:"", owner_ok:false, memo:"" };
+             area:"", extend:"", reply:"", team:"", owner:"", owner_ok:false, owner_ok_by:"", owner_ok_at:null, memo:"" };
   }
 
   // ---------- 확인 사항: 구분 + 일시 ----------
@@ -597,14 +696,17 @@
       var saved = null;
       try{ saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); }catch(e){}
       state.sections = normalize(saved && Array.isArray(saved.sections) ? saved.sections : clone(SEED.sections));
+      state.logs = saved && Array.isArray(saved.logs) ? saved.logs : [];
       return Promise.resolve();
     },
+    loadLogs: function(){ return Promise.resolve(); },
+    logInserted: function(){ localStore.save(); },
     save: function(){
       clearTimeout(localTimer);
       setStatus("busy", "저장 중…");
       localTimer = setTimeout(function(){
         try{
-          localStorage.setItem(STORAGE_KEY, JSON.stringify({ sections: state.sections, updatedAt: new Date().toISOString() }));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({ sections: state.sections, logs: state.logs, updatedAt: new Date().toISOString() }));
           setStatus("local", "이 브라우저에만 저장됨 · " + fmtTime(new Date()));
         }catch(e){
           setStatus("error", "저장 실패 — 내보내기로 백업하세요");
@@ -628,7 +730,7 @@
   var skipped = {};                     // "kind:id" -> a remote value was held back while we were saving
   var inserting = {};                   // ids whose INSERT hasn't been acknowledged yet
   var flushTimer = null, saving = 0, lastSaved = null, saveError = false;
-  var online = false, peers = 1, everSubscribed = false;
+  var online = false, peers = 1, peerNames = [], everSubscribed = false;
   var CLIENT_ID = uid("c");
 
   function tableFor(kind){ return kind === "row" ? T_ROW : T_SEC; }
@@ -744,6 +846,19 @@
         secs.forEach(function(s){ s.rows.sort(bySortOrder); });
         state.sections = secs.sort(bySortOrder);
       });
+    },
+    // The log is append-only (RLS allows select + insert only). A missing eec_logs table must
+    // not block the sheet, so failures here only warn.
+    loadLogs: function(){
+      return sb.from(T_LOG).select("*").order("created_at", { ascending: false }).limit(LOG_LIMIT).then(function(res){
+        if(res.error){ console.warn("변경 이력을 불러오지 못했습니다:", res.error.message); return; }
+        res.data.forEach(addLog);
+        renderLogs();
+      });
+    },
+    logInserted: function(entry){
+      var rec = { id: entry.id, team: entry.team, name: entry.name, message: entry.message, target: entry.target, row_id: entry.row_id };
+      return track(sb.from(T_LOG).insert(rec));
     },
     rowChanged: function(row, fields){ markDirty("row", row.id, fields); },
     secChanged: function(sec, fields){ markDirty("sec", sec.id, fields); },
@@ -879,14 +994,23 @@
     channel = sb.channel("eec-sync", { config: { presence: { key: CLIENT_ID } } })
       .on("postgres_changes", { event: "*", schema: "public", table: T_SEC }, onRemote("sec"))
       .on("postgres_changes", { event: "*", schema: "public", table: T_ROW }, onRemote("row"))
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: T_LOG }, function(p){
+        if(loaded && p.new){ addLog(p.new); renderLogs(); }
+      })
       .on("presence", { event: "sync" }, function(){
-        peers = Math.max(1, Object.keys(channel.presenceState()).length);
+        var ps = channel.presenceState();
+        peers = Math.max(1, Object.keys(ps).length);
+        peerNames = [];
+        Object.keys(ps).forEach(function(k){
+          var m = ps[k][0] || {};
+          if(m.name){ peerNames.push((m.team ? m.team + " " : "") + m.name); }
+        });
         updateRemoteStatus();
       })
       .subscribe(function(status){
         if(status === "SUBSCRIBED"){
           online = true;
-          channel.track({ since: Date.now() });
+          channel.track(presenceMeta());
           // Anything saved between the first load and now (or while disconnected) arrived without events.
           if(everSubscribed || loaded){ reload(); }
           everSubscribed = true;
@@ -900,8 +1024,9 @@
   var reloadTimer = null;
   function scheduleReload(){ clearTimeout(reloadTimer); reloadTimer = setTimeout(reload, 300); }
   function reload(){
-    return remoteStore.load().then(function(){ loaded = true; requestRender(); }).catch(function(err){ showLoadError(err); });
+    return remoteStore.load().then(function(){ loaded = true; requestRender(); remoteStore.loadLogs(); }).catch(function(err){ showLoadError(err); });
   }
+  function presenceMeta(){ return { since: Date.now(), team: user ? user.team : "", name: user ? user.name : "" }; }
 
   // Background tabs can lose the socket quietly; resync on return.
   var hiddenAt = 0;
@@ -930,6 +1055,7 @@
     else if(lastSaved){ save = "저장됨 " + fmtTime(lastSaved); }
     else{ save = ""; }
     setStatus(saveError ? "error" : !online ? "offline" : remoteStore.pending() ? "busy" : "online", conn + (save ? " · " + save : ""));
+    document.getElementById("saveStatus").title = peerNames.length ? "접속 중: " + peerNames.join(", ") : "";
   }
 
   var store = REMOTE ? remoteStore : localStore;
@@ -999,7 +1125,8 @@
       '<td><textarea class="cell-input" rows="1" data-field="reply" placeholder="연장/종료/추가 내용" aria-label="추가 내용 기재">' + esc(r.reply) + "</textarea></td>" +
       '<td class="g-start g-tint"><textarea class="cell-input" rows="1" data-field="team" placeholder="팀" aria-label="요청자 팀">' + esc(r.team) + "</textarea></td>" +
       '<td class="g-tint"><textarea class="cell-input" rows="1" data-field="owner" placeholder="담당자" aria-label="요청자 담당자">' + esc(r.owner) + "</textarea></td>" +
-      '<td class="g-tint c-center"><label class="check-box" title="담당자 확인"><input type="checkbox" data-field="owner_ok"' + (r.owner_ok ? " checked" : "") + '><span class="visually-hidden">담당자 확인</span></label></td>' +
+      '<td class="g-tint c-center"><label class="check-box" title="담당자 확인"><input type="checkbox" data-field="owner_ok"' + (r.owner_ok ? " checked" : "") + '><span class="visually-hidden">담당자 확인</span></label>' +
+        '<span class="ok-stamp">' + esc(okStamp(r)) + "</span></td>" +
       '<td class="g-start"><textarea class="cell-input cell-input--sm" rows="1" data-field="memo" placeholder="비고" aria-label="비고">' + esc(r.memo) + "</textarea></td>" +
       '<td class="g-start"><div class="row-actions">' +
         '<button type="button" class="btn btn--icon btn--icon--xs" data-action="row-up" aria-label="위로 이동"' + (idx === 0 ? " disabled" : "") + ">" + icon("up") + "</button>" +
@@ -1049,6 +1176,88 @@
     sheet.insertAdjacentHTML("beforeend", html);
     autosizeAll();
     renderSummary();
+  }
+
+  // ---------- 담당자 확인 stamp ----------
+  function okStamp(r){
+    return r.owner_ok && r.owner_ok_at ? fmtStamp(r.owner_ok_at) + " " + (r.owner_ok_by || "") + " 확인" : "";
+  }
+
+  // ---------- 변경 이력 ----------
+  // One entry per action: "No.35 적용 영역 수정" plus who and when. No. is the number at the
+  // time of the action (it shifts as rows move), so the item name rides along for context.
+  var FIELD_NAMES = {
+    cat: "이벤트 및 단말 대분류", sub: "이벤트 및 단말 소분류", area: "적용 영역", reply: "추가 내용 기재",
+    team: "요청자 팀", owner: "요청자 담당자", memo: "비고", checks: "확인 사항"
+  };
+  var logShown = LOG_PAGE;
+
+  function rowLabel(row){ return "No." + (rowNumbers[row.id] || "?"); }
+
+  function addLog(e){
+    var existing = state.logs.find(function(x){ return x.id === e.id; });
+    if(existing){ existing.created_at = e.created_at || existing.created_at; }   // server time wins
+    else{ state.logs.push(e); }
+    state.logs.sort(function(a, b){ return Date.parse(b.created_at) - Date.parse(a.created_at); });
+    if(state.logs.length > LOG_LIMIT){ state.logs.length = LOG_LIMIT; }
+  }
+
+  function logAction(message, row){
+    var entry = {
+      id: newId(), created_at: new Date().toISOString(),
+      team: user ? user.team : "", name: user ? user.name : "",
+      message: message, target: row ? (row.sub || row.cat || "") : "", row_id: row ? row.id : null
+    };
+    addLog(entry);
+    renderLogs();
+    store.logInserted(entry);
+  }
+
+  function renderLogs(){
+    var list = document.getElementById("logList");
+    var shown = state.logs.slice(0, logShown);
+    document.getElementById("logCount").textContent = state.logs.length + "건";
+    list.innerHTML = shown.length ? shown.map(function(e){
+      return '<li class="log__item">' +
+        '<div class="log__msg">' + esc(e.message) + (e.target ? '<span class="log__target">' + esc(e.target) + "</span>" : "") + "</div>" +
+        '<div class="log__meta"' + (e.team ? ' title="' + esc(e.team) + '"' : "") + ">" + esc(e.name || "이름 없음") + " | " + fmtStamp(e.created_at) + "</div>" +
+      "</li>";
+    }).join("") : '<li class="log__empty">아직 기록이 없습니다.</li>';
+    document.getElementById("logMore").hidden = state.logs.length <= logShown;
+  }
+  document.getElementById("logMore").addEventListener("click", function(){
+    logShown += LOG_PAGE * 2;
+    renderLogs();
+  });
+
+  // Text cells log once per edit, when focus leaves the cell with a different value than it had
+  // on entry — not on every keystroke. Keyed by cell (selectorFor) so a remote re-render that
+  // swaps the element mid-edit doesn't lose the starting value.
+  var editStart = {};
+  function isTextCell(el){
+    return !!(el.dataset && (el.dataset.sfield || (el.dataset.cfield && el.dataset.cfield !== "kind") ||
+      (el.dataset.field && (el.tagName === "TEXTAREA"))));
+  }
+  sheet.addEventListener("focusin", function(e){
+    var el = e.target;
+    if(!isTextCell(el)){ return; }
+    var k = selectorFor(el);
+    if(k && !(k in editStart)){ editStart[k] = el.value; }
+  });
+  function logTextEdit(el){
+    var k = selectorFor(el);
+    if(!k || !(k in editStart)){ return; }
+    var before = editStart[k];
+    delete editStart[k];
+    if(before === el.value){ return; }
+    var c = ctx(el);
+    if(el.dataset.sfield && c.sec){
+      logAction("구분 '" + (c.sec.name || "이름 없음") + "' " + (el.dataset.sfield === "name" ? "이름" : "안내 문구") + " 수정");
+    }else if(el.dataset.cfield && c.row){
+      logAction(rowLabel(c.row) + " 확인 사항 수정", c.row);
+    }else if(el.dataset.field && c.row){
+      logAction(rowLabel(c.row) + " " + (FIELD_NAMES[el.dataset.field] || el.dataset.field) + " 수정", c.row);
+    }
   }
 
   // ---------- remote-driven re-render that doesn't disturb whoever is typing ----------
@@ -1110,6 +1319,7 @@
     tr.classList.toggle("is-urgent", !!row.urgent);
     tr.querySelector('[data-field="urgent"]').checked = !!row.urgent;
     tr.querySelector('[data-field="owner_ok"]').checked = !!row.owner_ok;
+    tr.querySelector(".ok-stamp").textContent = okStamp(row);
     tr.querySelectorAll('[data-field="extend"]').forEach(function(r){ r.checked = r.value === row.extend; });
     // The focused cell is left alone; if it now disagrees with the saved value, refresh it on blur.
     tr.querySelectorAll("textarea[data-field]").forEach(function(el){
@@ -1149,6 +1359,7 @@
       if(tc.row){ e.target.value = cellValue(tc.row.checks[tc.checkIdx], "time"); }
       e.target.removeAttribute("aria-invalid");
     }
+    if(isTextCell(e.target)){ logTextEdit(e.target); }
     if(REMOTE){ scheduleFlush(0); }
     if(!tr || !tr.dataset.stale || (e.relatedTarget && tr.contains(e.relatedTarget))){ return; }
     delete tr.dataset.stale;
@@ -1225,15 +1436,23 @@
       c.row.urgent = el.checked;
       c.tr.classList.toggle("is-urgent", el.checked);
       store.rowChanged(c.row, ["urgent"]);
+      logAction(rowLabel(c.row) + (el.checked ? " 체크" : " 체크 해제"), c.row);
       renderSummary();
       if(onlyUrgent && !el.checked){ render(); }
     }else if(el.dataset.field === "extend"){
       c.row.extend = el.value;
       store.rowChanged(c.row, ["extend"]);
+      logAction(rowLabel(c.row) + " 기간 연장 " + el.value, c.row);
       renderSummary();
     }else if(el.dataset.field === "owner_ok"){
       c.row.owner_ok = el.checked;
-      store.rowChanged(c.row, ["owner_ok"]);
+      c.row.owner_ok_by = el.checked && user ? user.name : "";
+      c.row.owner_ok_at = el.checked ? new Date().toISOString() : null;
+      store.rowChanged(c.row, ["owner_ok", "owner_ok_by", "owner_ok_at"]);
+      c.tr.querySelector(".ok-stamp").textContent = okStamp(c.row);
+      logAction(rowLabel(c.row) + (el.checked ? " 담당자 확인" : " 담당자 확인 해제"), c.row);
+    }else if(el.dataset.cfield === "kind"){
+      logAction(rowLabel(c.row) + " 확인 사항 구분 변경", c.row);
     }
   });
 
@@ -1256,6 +1475,7 @@
         radio.checked = false;
         rc.row.extend = "";
         store.rowChanged(rc.row, ["extend"]);
+        logAction(rowLabel(rc.row) + " 기간 연장 선택 해제", rc.row);
         renderSummary();
       }
       return;
@@ -1273,12 +1493,14 @@
       case "add-check":
         row.checks.push(blankCheck());
         store.rowChanged(row, ["checks"]);
+        logAction(rowLabel(row) + " 확인 사항 추가", row);
         render();
         focusIn('tr[data-row="' + row.id + '"] .check:last-of-type [data-cfield="date"]');
         break;
       case "remove-check":
         row.checks.splice(c.checkIdx, 1);
         store.rowChanged(row, ["checks"]);
+        logAction(rowLabel(row) + " 확인 사항 삭제", row);
         render();
         break;
       case "row-add":
@@ -1287,28 +1509,41 @@
         sec.rows.push(nr);
         store.rowInserted(nr, sec);
         render();
+        logAction(rowLabel(nr) + " 항목 추가 · " + (sec.name || "이름 없는 구분"));
         focusIn('tr[data-row="' + nr.id + '"] [data-field="cat"]');
         break;
-      case "row-up": move(sec.rows, ri, ri - 1, rowMoved); render(); break;
-      case "row-down": move(sec.rows, ri, ri + 1, rowMoved); render(); break;
+      case "row-up":
+      case "row-down":
+        var before = rowLabel(row);
+        move(sec.rows, ri, btn.dataset.action === "row-up" ? ri - 1 : ri + 1, rowMoved);
+        render();
+        logAction(before + " → " + rowLabel(row) + " 순서 변경", row);
+        break;
       case "row-delete":
         confirmDelete("이 항목을 삭제할까요?", "‘" + (row.sub || row.cat || "이름 없는 항목") + "’ 행이 삭제됩니다.").then(function(ok){
           if(!ok){ return; }
           var at = sec.rows.indexOf(row);
           if(at === -1){ return; }
+          var label = rowLabel(row);
           sec.rows.splice(at, 1);
           store.rowDeleted(row);
           render();
+          logAction(label + " 항목 삭제", row);
           toast("항목을 삭제했습니다.", function(){
             if(!findSection(sec.id)){ toast("구분이 삭제되어 되돌릴 수 없습니다."); return; }
             sec.rows.splice(Math.min(at, sec.rows.length), 0, row);
             store.rowInserted(row, sec);
             render();
+            logAction(rowLabel(row) + " 항목 복원", row);
           });
         });
         break;
-      case "sec-up": move(state.sections, si, si - 1, secMoved); render(); break;
-      case "sec-down": move(state.sections, si, si + 1, secMoved); render(); break;
+      case "sec-up":
+      case "sec-down":
+        move(state.sections, si, btn.dataset.action === "sec-up" ? si - 1 : si + 1, secMoved);
+        render();
+        logAction("구분 '" + (sec.name || "이름 없음") + "' 순서 변경");
+        break;
       case "sec-delete":
         confirmDelete("구분을 삭제할까요?", "‘" + (sec.name || "이름 없는 구분") + "’과 그 안의 항목 " + sec.rows.length + "건이 함께 삭제됩니다.").then(function(ok){
           if(!ok){ return; }
@@ -1317,10 +1552,12 @@
           state.sections.splice(at, 1);
           store.secDeleted(sec);
           render();
+          logAction("구분 '" + (sec.name || "이름 없음") + "' 삭제 (항목 " + sec.rows.length + "건)");
           toast("구분을 삭제했습니다.", function(){
             state.sections.splice(Math.min(at, state.sections.length), 0, sec);
             store.secInserted(sec);
             render();
+            logAction("구분 '" + (sec.name || "이름 없음") + "' 복원");
           });
         });
         break;
@@ -1344,6 +1581,7 @@
     state.sections.push(s);
     store.secInserted(s);
     render();
+    logAction("구분 추가");
     var el = sheet.querySelector('tbody[data-sec="' + s.id + '"] .section-name');
     if(el){ el.focus(); el.scrollIntoView({ block:"center" }); }
   });
@@ -1377,6 +1615,7 @@
         state.sections = normalize(next.sections);
         render();
         store.replaceAll();
+        logAction("파일 가져오기로 전체 데이터 교체 (" + file.name + ")");
         toast("파일을 가져왔습니다.");
       });
     }).catch(function(){ toast("가져올 수 없는 파일입니다."); });
@@ -1440,8 +1679,11 @@
     store.load().then(function(){
       loaded = true;
       render();
+      renderLogs();
+      fillTeamOptions();
       if(REMOTE){
         updateRemoteStatus();
+        store.loadLogs();
         if(!channel){ subscribe(); }
       }else{
         setStatus("local", "로컬 모드 · 이 브라우저에만 저장");
@@ -1449,8 +1691,68 @@
     }).catch(showLoadError);
   }
 
+  // ---------- 작성자(팀·담당자) ----------
+  // No accounts: whoever opens the page says who they are once, and it is remembered in this
+  // browser. The name goes into the change log and the 담당자 확인 stamp; it is not verified.
+  function loadUser(){
+    try{
+      var u = JSON.parse(localStorage.getItem(USER_KEY) || "null");
+      if(u && u.team && u.name){ return u; }
+    }catch(e){}
+    return null;
+  }
+  var user = loadUser();
+  var userDlg = document.getElementById("userDialog");
+
+  function renderUser(){
+    var box = document.getElementById("whoami");
+    box.hidden = !user;
+    if(user){
+      document.getElementById("whoTeam").textContent = user.team;
+      document.getElementById("whoName").textContent = user.name;
+    }
+  }
+  function fillTeamOptions(){
+    var teams = {};
+    state.sections.forEach(function(s){ s.rows.forEach(function(r){ if(r.team){ teams[r.team.trim()] = true; } }); });
+    document.getElementById("teamOptions").innerHTML = Object.keys(teams).sort().map(function(t){
+      return '<option value="' + esc(t) + '"></option>';
+    }).join("");
+  }
+  function openUserDialog(){
+    document.getElementById("userTeam").value = user ? user.team : "";
+    document.getElementById("userName").value = user ? user.name : "";
+    document.getElementById("userError").textContent = "";
+    document.getElementById("userCancel").hidden = !user;
+    userDlg.showModal();
+    document.getElementById(user ? "userName" : "userTeam").focus();
+  }
+  // Until someone has said who they are, Esc can't dismiss the dialog.
+  userDlg.addEventListener("cancel", function(e){ if(!user){ e.preventDefault(); } });
+  document.getElementById("userCancel").addEventListener("click", function(){ userDlg.close(); });
+  document.getElementById("changeUserBtn").addEventListener("click", openUserDialog);
+  document.getElementById("userForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var teamEl = document.getElementById("userTeam"), nameEl = document.getElementById("userName");
+    var team = teamEl.value.trim(), name = nameEl.value.trim();
+    teamEl.setAttribute("aria-invalid", team ? "false" : "true");
+    nameEl.setAttribute("aria-invalid", name ? "false" : "true");
+    if(!team || !name){
+      document.getElementById("userError").textContent = "팀과 담당자 이름을 모두 입력해 주세요.";
+      (team ? nameEl : teamEl).focus();
+      return;
+    }
+    user = { team: team, name: name };
+    try{ localStorage.setItem(USER_KEY, JSON.stringify(user)); }catch(err){}
+    renderUser();
+    if(channel && online){ channel.track(presenceMeta()); }
+    userDlg.close();
+  });
+
   renderHeader();
+  renderUser();
   start();
+  if(!user){ openUserDialog(); }
 })();
 </script>
 </body>

@@ -36,6 +36,21 @@ create index if not exists eec_rows_section_idx on eec_rows(section_id);
 
 -- 나중에 추가된 칸: 이 스크립트 이전 버전으로 만든 테이블에도 붙도록 따로 추가한다.
 alter table eec_rows add column if not exists owner_ok boolean not null default false;
+alter table eec_rows add column if not exists owner_ok_by text not null default '';   -- 담당자 확인한 사람
+alter table eec_rows add column if not exists owner_ok_at timestamptz;                -- 담당자 확인한 시각
+
+-- 변경 이력: 화면에서 한 동작마다 한 줄 ("No.35 적용 영역 수정" + 팀·이름·시각).
+-- 추가·조회만 허용하고 수정·삭제는 막아 둔다(아래 정책).
+create table if not exists eec_logs (
+  id          text primary key,
+  created_at  timestamptz not null default now(),
+  team        text not null default '',
+  name        text not null default '',
+  message     text not null default '',
+  target      text not null default '',               -- 항목 이름(소분류) — No.는 바뀔 수 있어 함께 남김
+  row_id      text
+);
+create index if not exists eec_logs_created_idx on eec_logs(created_at desc);
 
 -- updated_at 자동 갱신
 create or replace function eec_touch() returns trigger language plpgsql as $$
@@ -59,8 +74,15 @@ create policy "anon all eec_sections" on eec_sections for all to anon using (tru
 drop policy if exists "anon all eec_rows" on eec_rows;
 create policy "anon all eec_rows" on eec_rows for all to anon using (true) with check (true);
 
+alter table eec_logs enable row level security;
+drop policy if exists "anon read eec_logs" on eec_logs;
+create policy "anon read eec_logs" on eec_logs for select to anon using (true);
+drop policy if exists "anon add eec_logs" on eec_logs;
+create policy "anon add eec_logs" on eec_logs for insert to anon with check (true);
+
 grant usage on schema public to anon;
 grant select, insert, update, delete on eec_sections, eec_rows to anon;
+grant select, insert on eec_logs to anon;
 
 -- 3. 실시간 동기화 ----------------------------------------------------------
 --    한 사람이 고친 내용이 다른 사람 화면에 바로 반영되도록 변경 이벤트를 브로드캐스트한다.
@@ -71,6 +93,9 @@ begin
   end if;
   if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'eec_rows') then
     alter publication supabase_realtime add table eec_rows;
+  end if;
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'eec_logs') then
+    alter publication supabase_realtime add table eec_logs;
   end if;
 end $$;
 

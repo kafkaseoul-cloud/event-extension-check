@@ -192,6 +192,62 @@
   .btn--ghost{ background: var(--surface); color: var(--text); border-color: var(--hairline); }
   .btn--ghost:hover{ border-color: var(--hairline-strong); background: var(--surface-pearl); }
   .btn--danger{ background: var(--error); color: var(--on-primary); border-color: var(--error); }
+  .btn--danger-ghost{ background: var(--surface); color: var(--error-ink); border-color: var(--hairline); }
+  .btn--danger-ghost:hover{ border-color: var(--error); background: var(--error-soft); }
+
+  /* ---------- 월별 시트 탭 ---------- */
+  .months{ display:flex; align-items:center; gap: var(--space-xs); margin-bottom: var(--space-lg); flex-wrap:wrap; }
+  .months[hidden]{ display:none; }
+  .months__tabs{
+    display:inline-flex; gap: var(--space-3xs); padding: var(--space-3xs); max-width:100%; overflow-x:auto;
+    background: var(--surface-pearl); border:1px solid var(--hairline); border-radius: var(--radius-md);
+  }
+  .months__tab{
+    height:34px; padding: 0 14px; border-radius: var(--radius-sm); border:none; background:transparent; flex:0 0 auto;
+    font-weight:600; font-size:0.875rem; color: var(--muted); cursor:pointer; white-space:nowrap;
+  }
+  .months__tab:hover{ color: var(--text); }
+  .months__tab:focus-visible{ outline:2px solid var(--primary-focus); outline-offset:2px; }
+  .months__tab[aria-selected="true"]{ background: var(--surface); color: var(--primary); box-shadow: 0 0 0 1px var(--hairline); }
+  .months__delete{
+    margin-left:auto; border:none; background:none; color: var(--muted); font-size:0.75rem; font-weight:600;
+    padding: 4px 8px; border-radius:4px; cursor:pointer;
+  }
+  .months__delete:hover{ color: var(--error-ink); background: var(--error-soft); }
+  .months__delete[hidden]{ display:none; }
+
+  /* ---------- 타이틀·설명 편집(관리자) ---------- */
+  .app__heading{ flex: 1 1 520px; min-width:0; }
+  .title-input{
+    display:block; width:100%; margin: 0 0 var(--space-xs) -8px; padding: 2px 8px;
+    font-family: var(--font-display); font-weight:600; letter-spacing:-0.02em;
+    font-size: clamp(1.5rem, 1.6vw + 1.1rem, 2rem); line-height:1.25;
+    border:1px solid transparent; border-radius: var(--radius-sm); background: transparent; outline: 2px solid transparent;
+  }
+  .notices-input{
+    display:block; width:100%; margin-left:-8px; padding: 4px 8px; resize:none; field-sizing: content; min-height: 3em;
+    font-size:0.875rem; line-height:1.6; color: var(--muted);
+    border:1px solid transparent; border-radius: var(--radius-sm); background: transparent; outline: 2px solid transparent;
+  }
+  .title-input:hover, .notices-input:hover{ border-color: var(--hairline); background: var(--surface); }
+  .title-input:focus, .notices-input:focus{ outline-color: var(--primary-focus); background: var(--surface); color: var(--text); }
+  .title-input[hidden], .notices-input[hidden], .notices[hidden], #docTitle[hidden]{ display:none; }
+
+  /* 구분 추가 — sits in the header cell right of 비고 */
+  .add-sec{
+    display:inline-flex; align-items:center; justify-content:center; gap:3px; width:100%; min-height:40px;
+    border:1px dashed var(--hairline-strong); border-radius: var(--radius-sm); background: var(--surface);
+    color: var(--primary); font-size:11px; font-weight:600; line-height:1.2; cursor:pointer; padding: 2px 4px;
+  }
+  .add-sec .icon{ width:12px; height:12px; flex-shrink:0; }
+  .add-sec:hover{ background: var(--primary-soft); border-color: var(--primary); }
+  .add-sec:focus-visible{ outline:2px solid var(--primary-focus); outline-offset:1px; }
+  .add-sec[hidden]{ display:none; }
+
+  .field--check{ display:flex; align-items:flex-start; gap:8px; font-size:0.8125rem; cursor:pointer; }
+  .field--check input{ margin-top:3px; }
+  .field--check small{ color: var(--muted); }
+  .log__reset{ margin-left:auto; }
   .btn--sm{ height:32px; padding:0 12px; font-size:0.8125rem; }
   .btn--icon{
     width:28px; height:28px; padding:0; border-radius: var(--radius-sm);
@@ -457,10 +513,18 @@
 </svg>
 
 <div class="app">
+  <nav class="months" id="monthBar" aria-label="월별 시트" hidden>
+    <div class="months__tabs" id="monthTabs" role="tablist"></div>
+    <button type="button" class="btn btn--ghost btn--sm" id="newMonthBtn" hidden><svg class="icon"><use href="#i-plus"/></svg>새 달</button>
+    <button type="button" class="months__delete" id="deleteMonthBtn" hidden>이 달 삭제</button>
+  </nav>
+
   <header class="app__header">
-    <div>
+    <div class="app__heading">
       <h1 id="docTitle"></h1>
+      <input class="title-input" id="titleInput" aria-label="타이틀" hidden>
       <ul class="notices" id="notices"></ul>
+      <textarea class="notices-input" id="noticesInput" rows="2" aria-label="설명 문구 (한 줄에 하나)" placeholder="설명 문구를 한 줄에 하나씩 입력" hidden></textarea>
     </div>
     <div class="app__meta">
       <span class="who" id="whoami" hidden>
@@ -482,7 +546,6 @@
       <button type="button" class="btn btn--ghost btn--sm" id="exportBtn"><svg class="icon"><use href="#i-download"/></svg>내보내기</button>
       <button type="button" class="btn btn--ghost btn--sm" id="importBtn"><svg class="icon"><use href="#i-upload"/></svg>가져오기</button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
-      <button type="button" class="btn btn--primary btn--sm" id="addSectionBtn"><svg class="icon"><use href="#i-plus"/></svg>구분 추가</button>
     </div>
   </div>
 
@@ -516,7 +579,10 @@
           <th colspan="2" class="th-group g-start">사업 피드백 작성</th>
           <th colspan="3" class="th-group g-start g-tint">요청자</th>
           <th rowspan="2" class="g-start">비고</th>
-          <th rowspan="2" class="g-start"><span class="visually-hidden">행 관리</span></th>
+          <th rowspan="2" class="g-start th-tight">
+            <button type="button" class="add-sec" id="addSectionBtn" hidden><svg class="icon"><use href="#i-plus"/></svg>구분<br>추가</button>
+            <span class="visually-hidden">행 관리</span>
+          </th>
         </tr>
         <tr>
           <th class="g-start g-tint">대분류</th>
@@ -537,6 +603,7 @@
     <div class="log__head">
       <h2 id="logTitle">변경 이력</h2>
       <span class="count-pill" id="logCount"></span>
+      <button type="button" class="btn btn--danger-ghost btn--sm log__reset" id="logResetBtn" hidden>이력 초기화</button>
     </div>
     <ol class="log__list" id="logList"></ol>
     <button type="button" class="btn btn--ghost btn--sm log__more" id="logMore" hidden>더 보기</button>
@@ -568,6 +635,30 @@
   </form>
 </dialog>
 
+<dialog id="monthDialog" class="user-dialog" aria-labelledby="monthDialogTitle">
+  <form id="monthForm" novalidate>
+    <div class="dialog__body">
+      <h3 id="monthDialogTitle">새 달 만들기</h3>
+      <p id="monthDialogDesc"></p>
+      <div class="user-fields">
+        <label class="field">
+          <span class="field__label">월</span>
+          <input class="input" type="month" id="monthValue" required>
+        </label>
+        <label class="field field--check">
+          <input type="checkbox" id="monthCarry" checked>
+          <span>현재 달의 구분·항목 이어받기 <small>(기간 연장·추가 내용·담당자 확인·체크는 비움)</small></span>
+        </label>
+      </div>
+      <p class="field__error" id="monthError" role="alert"></p>
+    </div>
+    <div class="dialog__foot">
+      <button type="button" class="btn btn--ghost btn--sm" id="monthCancel">취소</button>
+      <button type="submit" class="btn btn--primary btn--sm" id="monthSubmit">만들기</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="confirmDialog" class="confirm-dialog" aria-labelledby="confirmTitle">
   <form method="dialog">
     <div class="dialog__body">
@@ -588,7 +679,7 @@
 (function(){
   "use strict";
 
-  var APP_VERSION = "0.2";
+  var APP_VERSION = "0.3";
 
   // ---- Supabase 설정 -----------------------------------------------------
   // 이 도구 전용 Supabase 프로젝트(event-extension-check, 서울 리전).
@@ -598,8 +689,9 @@
   var SUPABASE_ANON_KEY = "sb_publishable_5D_GcAx0M0GKvIq0fBpnUg_KA0u2My2";
   var REMOTE = SUPABASE_URL.indexOf("YOUR_SUPABASE") !== 0;
 
-  var T_SEC = "eec_sections", T_ROW = "eec_rows", T_LOG = "eec_logs";
+  var T_SEC = "eec_sections", T_ROW = "eec_rows", T_LOG = "eec_logs", T_MONTH = "eec_months";
   var SEC_COLS = ["sort_order", "name", "note"];
+  var MONTH_COLS = ["title", "notices"];
   var ROW_COLS = ["sort_order", "urgent", "cat", "sub", "checks", "area", "extend", "reply", "team", "owner",
                   "owner_ok", "owner_ok_by", "owner_ok_at", "memo"];
   var STORAGE_KEY = "event-extension-check:v1";
@@ -608,7 +700,11 @@
   var LOG_LIMIT = 300, LOG_PAGE = 30;
 
   var SEED = JSON.parse(document.getElementById("seedData").textContent);
-  var state = { title: SEED.title, notices: SEED.notices, sections: [], logs: [] };
+  // One sheet per month (eec_months, id "YYYY-MM"); sections, rows and logs carry month_id and
+  // only the month being viewed is loaded. state.months holds every month's title and notices.
+  var state = { sections: [], logs: [], months: [] };
+  var monthId = null;
+  var preferMonth = decodeURIComponent((location.hash || "").replace(/^#/, ""));
   var onlyUrgent = false;
   var loaded = false;
 
@@ -639,6 +735,19 @@
   function nextOrder(arr){ return arr.reduce(function(m, x){ return Math.max(m, x.sort_order); }, -1) + 1; }
 
   function findSection(sid){ return state.sections.find(function(s){ return s.id === sid; }); }
+  function findMonth(id){ return state.months.find(function(m){ return m.id === id; }); }
+  function currentMonth(){ return monthId ? findMonth(monthId) : null; }
+  function monthLabel(id){
+    var m = /^(\d{4})-(\d{2})$/.exec(id || "");
+    return m ? m[1] + "년 " + Number(m[2]) + "월" : (id || "");
+  }
+  // #YYYY-MM in the URL wins, then the month already open, then the newest.
+  function pickMonth(){
+    var ids = state.months.map(function(m){ return m.id; });
+    if(preferMonth && ids.indexOf(preferMonth) !== -1){ return preferMonth; }
+    if(monthId && ids.indexOf(monthId) !== -1){ return monthId; }
+    return ids.length ? ids[ids.length - 1] : null;
+  }
   function findRow(sec, rid){ return sec.rows.find(function(r){ return r.id === rid; }); }
   function locateRow(rid){
     for(var i = 0; i < state.sections.length; i++){
@@ -720,6 +829,9 @@
       try{ saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); }catch(e){}
       state.sections = normalize(saved && Array.isArray(saved.sections) ? saved.sections : clone(SEED.sections));
       state.logs = saved && Array.isArray(saved.logs) ? saved.logs : [];
+      // Local mode keeps a single sheet; the month tabs are a shared-data feature.
+      state.months = [{ id: "local", title: (saved && saved.title) || SEED.title, notices: (saved && saved.notices) || SEED.notices }];
+      monthId = "local";
       return Promise.resolve();
     },
     loadLogs: function(){ return Promise.resolve(); },
@@ -729,7 +841,8 @@
       setStatus("busy", "저장 중…");
       localTimer = setTimeout(function(){
         try{
-          localStorage.setItem(STORAGE_KEY, JSON.stringify({ sections: state.sections, logs: state.logs, updatedAt: new Date().toISOString() }));
+          var m = currentMonth() || {};
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({ title: m.title, notices: m.notices, sections: state.sections, logs: state.logs, updatedAt: new Date().toISOString() }));
           setStatus("local", "이 브라우저에만 저장됨 · " + fmtTime(new Date()));
         }catch(e){
           setStatus("error", "저장 실패 — 내보내기로 백업하세요");
@@ -738,7 +851,7 @@
     },
     pending: function(){ return false; }
   };
-  ["rowChanged", "secChanged", "rowInserted", "rowDeleted", "secInserted", "secDeleted"].forEach(function(k){
+  ["rowChanged", "secChanged", "monthChanged", "logsReset", "rowInserted", "rowDeleted", "secInserted", "secDeleted"].forEach(function(k){
     localStore[k] = function(){ localStore.save(); return Promise.resolve(true); };
   });
   localStore.replaceAll = function(){ localStore.save(); return Promise.resolve(); };
@@ -748,7 +861,7 @@
   // WHERE id = <that row>. Two people editing different rows, or different cells of one row,
   // never overwrite each other. For the same cell, the later save wins.
   var sb = null, channel = null;
-  var dirty = { row:{}, sec:{} };      // fields edited here and not yet sent
+  var dirty = { row:{}, sec:{}, month:{} };   // fields edited here and not yet sent
   var inflight = {};                    // "kind:id:field" -> count of sends awaiting ack
   var skipped = {};                     // "kind:id" -> a remote value was held back while we were saving
   var inserting = {};                   // ids whose INSERT hasn't been acknowledged yet
@@ -756,19 +869,20 @@
   var online = false, peers = 1, peerNames = [], everSubscribed = false;
   var CLIENT_ID = uid("c");
 
-  function tableFor(kind){ return kind === "row" ? T_ROW : T_SEC; }
-  function colsFor(kind){ return kind === "row" ? ROW_COLS : SEC_COLS; }
+  function tableFor(kind){ return kind === "row" ? T_ROW : kind === "sec" ? T_SEC : T_MONTH; }
+  function colsFor(kind){ return kind === "row" ? ROW_COLS : kind === "sec" ? SEC_COLS : MONTH_COLS; }
   function targetFor(kind, id){
     if(kind === "sec"){ return findSection(id); }
+    if(kind === "month"){ return findMonth(id); }
     var hit = locateRow(id);
     return hit && hit.row;
   }
   function toDbRow(row, sectionId){
-    var rec = { id: row.id, section_id: sectionId };
+    var rec = { id: row.id, section_id: sectionId, month_id: monthId };
     ROW_COLS.forEach(function(k){ rec[k] = row[k]; });
     return rec;
   }
-  function toDbSec(sec){ return { id: sec.id, sort_order: sec.sort_order, name: sec.name, note: sec.note }; }
+  function toDbSec(sec){ return { id: sec.id, month_id: monthId, sort_order: sec.sort_order, name: sec.name, note: sec.note }; }
 
   function isProtected(kind, id, f){
     return !!((dirty[kind][id] && dirty[kind][id][f]) || inflight[kind + ":" + id + ":" + f]);
@@ -788,7 +902,7 @@
   function flush(){
     clearTimeout(flushTimer);
     var waiting = false;
-    ["row", "sec"].forEach(function(kind){
+    ["row", "sec", "month"].forEach(function(kind){
       Object.keys(dirty[kind]).forEach(function(id){
         if(inserting[id]){ waiting = true; return; }   // UPDATE before INSERT lands would hit nothing
         var target = targetFor(kind, id);
@@ -837,10 +951,26 @@
 
   var remoteStore = {
     load: function(){
+      return sb.from(T_MONTH).select("*").order("id", { ascending: true }).then(function(mr){
+        if(mr.error){ throw mr.error; }
+        var prevMonths = {};
+        state.months.forEach(function(m){ prevMonths[m.id] = m; });
+        state.months = mr.data.map(function(rec){
+          var m = { id: rec.id };
+          MONTH_COLS.forEach(function(f){ m[f] = keepLocal("month", rec.id, f, prevMonths, rec); });
+          return m;
+        });
+        monthId = pickMonth();
+        if(!monthId){ state.sections = []; return; }
+        return remoteStore.loadSheet(monthId);
+      });
+    },
+    loadSheet: function(want){
       return Promise.all([
-        sb.from(T_SEC).select("*"),
-        sb.from(T_ROW).select("*")
+        sb.from(T_SEC).select("*").eq("month_id", want),
+        sb.from(T_ROW).select("*").eq("month_id", want)
       ]).then(function(r){
+        if(want !== monthId){ return; }          // switched month while this was loading
         if(r[0].error){ throw r[0].error; }
         if(r[1].error){ throw r[1].error; }
         var prev = {};
@@ -873,15 +1003,38 @@
     // The log is append-only (RLS allows select + insert only). A missing eec_logs table must
     // not block the sheet, so failures here only warn.
     loadLogs: function(){
-      return sb.from(T_LOG).select("*").order("created_at", { ascending: false }).limit(LOG_LIMIT).then(function(res){
+      var want = monthId;
+      if(!want){ return Promise.resolve(); }
+      return sb.from(T_LOG).select("*").eq("month_id", want).order("created_at", { ascending: false }).limit(LOG_LIMIT).then(function(res){
+        if(want !== monthId){ return; }
         if(res.error){ console.warn("변경 이력을 불러오지 못했습니다:", res.error.message); return; }
         res.data.forEach(addLog);
         renderLogs();
       });
     },
     logInserted: function(entry){
-      var rec = { id: entry.id, team: entry.team, name: entry.name, message: entry.message, target: entry.target, row_id: entry.row_id };
+      var rec = { id: entry.id, month_id: entry.month_id, team: entry.team, name: entry.name, message: entry.message, target: entry.target, row_id: entry.row_id };
       return track(sb.from(T_LOG).insert(rec));
+    },
+    logsReset: function(){ return track(sb.from(T_LOG).delete().eq("month_id", monthId)); },
+    monthChanged: function(m, fields){ markDirty("month", m.id, fields); },
+    // New month: the month row, then (optionally) copies of the current sheet's sections and rows.
+    createMonth: function(m, sections){
+      return track(sb.from(T_MONTH).insert({ id: m.id, title: m.title, notices: m.notices })).then(function(ok){
+        if(!ok || !sections.length){ return ok; }
+        var secRecs = sections.map(function(s){ return { id: s.id, month_id: m.id, sort_order: s.sort_order, name: s.name, note: s.note }; });
+        return track(sb.from(T_SEC).insert(secRecs)).then(function(ok2){
+          var rows = [];
+          sections.forEach(function(s){ s.rows.forEach(function(r){ var rec = toDbRow(r, s.id); rec.month_id = m.id; rows.push(rec); }); });
+          return ok2 && (!rows.length || track(sb.from(T_ROW).insert(rows)));
+        });
+      });
+    },
+    // Deleting the month cascades to its sections and rows; its log rows go explicitly.
+    deleteMonth: function(id){
+      return track(sb.from(T_LOG).delete().eq("month_id", id)).then(function(){
+        return track(sb.from(T_MONTH).delete().eq("id", id));
+      });
     },
     rowChanged: function(row, fields){ markDirty("row", row.id, fields); },
     secChanged: function(sec, fields){ markDirty("sec", sec.id, fields); },
@@ -916,9 +1069,9 @@
       return track(sb.from(T_SEC).delete().eq("id", sec.id));   // rows go with it (on delete cascade)
     },
     replaceAll: function(){
-      dirty = { row:{}, sec:{} };
-      return track(sb.from(T_ROW).delete().neq("id", "")).then(function(ok){
-        return ok && track(sb.from(T_SEC).delete().neq("id", ""));
+      dirty = { row:{}, sec:{}, month: dirty.month };
+      return track(sb.from(T_ROW).delete().eq("month_id", monthId)).then(function(ok){
+        return ok && track(sb.from(T_SEC).delete().eq("month_id", monthId));
       }).then(function(ok){
         if(!ok || !state.sections.length){ return ok; }
         return track(sb.from(T_SEC).insert(state.sections.map(toDbSec))).then(function(ok2){
@@ -932,7 +1085,7 @@
       });
     },
     pending: function(){
-      return saving > 0 || Object.keys(dirty.row).length > 0 || Object.keys(dirty.sec).length > 0;
+      return saving > 0 || Object.keys(dirty.row).length > 0 || Object.keys(dirty.sec).length > 0 || Object.keys(dirty.month).length > 0;
     }
   };
 
@@ -942,7 +1095,7 @@
 
   function refetch(kind, id){
     sb.from(tableFor(kind)).select("*").eq("id", id).maybeSingle().then(function(res){
-      if(!res.error && res.data){ applyRemote(kind, res.data); }
+      if(!res.error && res.data){ if(kind === "month"){ onMonthEvent({ eventType: "UPDATE", new: res.data }); } else { applyRemote(kind, res.data); } }
     });
   }
 
@@ -997,6 +1150,7 @@
   function onRemote(kind){
     return function(p){
       if(!loaded){ return; }
+      if(p.eventType !== "DELETE" && p.new && p.new.month_id !== monthId){ return; }   // another month's sheet
       if(p.eventType === "DELETE"){
         var id = p.old && p.old.id;
         if(!id){ scheduleReload(); return; }
@@ -1017,9 +1171,18 @@
     channel = sb.channel("eec-sync", { config: { presence: { key: CLIENT_ID } } })
       .on("postgres_changes", { event: "*", schema: "public", table: T_SEC }, onRemote("sec"))
       .on("postgres_changes", { event: "*", schema: "public", table: T_ROW }, onRemote("row"))
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: T_LOG }, function(p){
-        if(loaded && p.new){ addLog(p.new); renderLogs(); }
+      .on("postgres_changes", { event: "*", schema: "public", table: T_LOG }, function(p){
+        if(!loaded){ return; }
+        if(p.eventType === "DELETE"){
+          var gone = p.old && p.old.id;
+          var n = state.logs.length;
+          state.logs = state.logs.filter(function(x){ return x.id !== gone; });
+          if(state.logs.length !== n){ renderLogs(); }
+        }else if(p.new && p.new.month_id === monthId){
+          addLog(p.new); renderLogs();
+        }
       })
+      .on("postgres_changes", { event: "*", schema: "public", table: T_MONTH }, onMonthEvent)
       .on("presence", { event: "sync" }, function(){
         var ps = channel.presenceState();
         peers = Math.max(1, Object.keys(ps).length);
@@ -1047,7 +1210,9 @@
   var reloadTimer = null;
   function scheduleReload(){ clearTimeout(reloadTimer); reloadTimer = setTimeout(reload, 300); }
   function reload(){
-    return remoteStore.load().then(function(){ loaded = true; requestRender(); remoteStore.loadLogs(); }).catch(function(err){ showLoadError(err); });
+    return remoteStore.load().then(function(){
+      loaded = true; requestRender(); renderMonths(); renderHeader(); remoteStore.loadLogs();
+    }).catch(function(err){ showLoadError(err); });
   }
   function presenceMeta(){ return { since: Date.now(), team: user ? user.team : "", name: user ? user.name : "" }; }
 
@@ -1086,12 +1251,33 @@
   // =====================================================================
   // Render
   // =====================================================================
+  // Title and notices belong to the month being viewed. Admins get them as editable fields;
+  // a field someone is typing in is never overwritten by a re-render.
   function renderHeader(){
-    document.getElementById("docTitle").textContent = state.title;
-    document.getElementById("notices").innerHTML = (state.notices || []).map(function(n){
-      return "<li>" + esc(n) + "</li>";
-    }).join("");
+    var m = currentMonth(), admin = isAdmin() && !!m;
+    var h1 = document.getElementById("docTitle"), ti = document.getElementById("titleInput");
+    var ul = document.getElementById("notices"), ta = document.getElementById("noticesInput");
+    var title = m ? m.title : (loaded && REMOTE ? "등록된 달이 없습니다" : "");
+    var notices = m ? (m.notices || []) : [];
+    h1.hidden = admin; ul.hidden = admin;
+    ti.hidden = !admin; ta.hidden = !admin;
+    h1.textContent = title;
+    ul.innerHTML = notices.map(function(n){ return "<li>" + esc(n) + "</li>"; }).join("");
+    if(document.activeElement !== ti){ ti.value = title; }
+    if(document.activeElement !== ta){ ta.value = notices.join("\n"); }
     document.getElementById("appVersion").textContent = APP_VERSION;
+  }
+
+  function renderMonths(){
+    var bar = document.getElementById("monthBar"), admin = isAdmin();
+    bar.hidden = !REMOTE;
+    if(!REMOTE){ return; }
+    document.getElementById("monthTabs").innerHTML = state.months.map(function(m){
+      return '<button type="button" role="tab" class="months__tab" data-month="' + esc(m.id) + '" aria-selected="' + (m.id === monthId) + '">' +
+        esc(monthLabel(m.id)) + "</button>";
+    }).join("");
+    document.getElementById("newMonthBtn").hidden = !admin;
+    document.getElementById("deleteMonthBtn").hidden = !admin || !monthId || state.months.length < 2;
   }
 
   function renderSummary(){
@@ -1250,7 +1436,7 @@
 
   function logAction(message, row){
     var entry = {
-      id: newId(), created_at: new Date().toISOString(),
+      id: newId(), created_at: new Date().toISOString(), month_id: monthId,
       team: user ? user.team : "", name: user ? user.name : "",
       message: message, target: row ? (row.sub || row.cat || "") : "", row_id: row ? row.id : null
     };
@@ -1630,6 +1816,7 @@
 
   document.getElementById("addSectionBtn").addEventListener("click", function(){
     if(!isAdmin()){ return; }
+    if(!monthId){ toast("먼저 ‘새 달’로 시트를 만들어 주세요."); return; }
     if(onlyUrgent){ setOnlyUrgent(false); }
     var s = { id: uid("s"), sort_order: nextOrder(state.sections), name:"", note:"", rows:[blankRow(0)] };
     state.sections.push(s);
@@ -1642,12 +1829,13 @@
 
   // ---------- export / import ----------
   document.getElementById("exportBtn").addEventListener("click", function(){
-    var data = { title: state.title, notices: state.notices, sections: state.sections, exportedAt: new Date().toISOString() };
+    var cm = currentMonth() || {};
+    var data = { month: monthId, title: cm.title, notices: cm.notices, sections: state.sections, exportedAt: new Date().toISOString() };
     var blob = new Blob([JSON.stringify(data, null, 2)], { type:"application/json" });
     var a = document.createElement("a");
     var d = new Date();
     a.href = URL.createObjectURL(blob);
-    a.download = "event-extension-check_" + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + ".json";
+    a.download = "event-extension-check_" + (monthId && monthId !== "local" ? monthId + "_" : "") + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + ".json";
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
   });
@@ -1674,6 +1862,184 @@
         toast("파일을 가져왔습니다.");
       });
     }).catch(function(){ toast("가져올 수 없는 파일입니다."); });
+  });
+
+  // =====================================================================
+  // 월별 시트
+  // =====================================================================
+  function onMonthEvent(p){
+    if(!loaded && p.eventType !== "UPDATE"){ return; }
+    if(p.eventType === "DELETE"){
+      var gone = p.old && p.old.id;
+      if(!findMonth(gone)){ return; }
+      state.months = state.months.filter(function(m){ return m.id !== gone; });
+      if(gone === monthId){
+        toast(monthLabel(gone) + " 시트가 삭제되었습니다.");
+        var last = state.months[state.months.length - 1];
+        switchMonth(last ? last.id : null);
+      }else{
+        renderMonths();
+      }
+      return;
+    }
+    var rec = p.new, m = findMonth(rec.id);
+    if(!m){
+      m = { id: rec.id };
+      MONTH_COLS.forEach(function(f){ m[f] = clone(rec[f]); });
+      state.months.push(m);
+      state.months.sort(function(a, b){ return a.id < b.id ? -1 : a.id > b.id ? 1 : 0; });
+      renderMonths();
+      return;
+    }
+    var changed = false;
+    MONTH_COLS.forEach(function(f){
+      if(same(m[f], rec[f])){ return; }
+      if(isProtected("month", rec.id, f)){ skipped["month:" + rec.id] = true; return; }
+      m[f] = clone(rec[f]);
+      changed = true;
+    });
+    if(changed && rec.id === monthId){ renderHeader(); }
+  }
+
+  function switchMonth(id){
+    if(REMOTE){ flush(); }                       // send pending edits while their rows still exist
+    monthId = id;
+    preferMonth = id || "";
+    try{ history.replaceState(null, "", id ? "#" + id : location.pathname + location.search); }catch(e){}
+    loaded = false;
+    state.sections = []; state.logs = [];
+    logShown = LOG_PAGE; editStart = {};
+    setOnlyUrgent(false);
+    renderMonths(); renderHeader(); render(); renderLogs();
+    if(!id){ loaded = true; renderHeader(); return Promise.resolve(); }
+    setStatus("busy", "불러오는 중…");
+    return remoteStore.loadSheet(id).then(function(){
+      if(id !== monthId){ return; }
+      loaded = true;
+      render(); renderHeader(); renderLogs(); fillTeamOptions(); updateRemoteStatus();
+      return remoteStore.loadLogs();
+    }).catch(showLoadError);
+  }
+
+  document.getElementById("monthTabs").addEventListener("click", function(e){
+    var tab = e.target.closest("[data-month]");
+    if(tab && tab.dataset.month !== monthId){ switchMonth(tab.dataset.month); }
+  });
+  window.addEventListener("hashchange", function(){
+    var id = decodeURIComponent(location.hash.replace(/^#/, ""));
+    if(REMOTE && id && id !== monthId && findMonth(id)){ switchMonth(id); }
+  });
+
+  // ---------- 새 달 만들기 (관리자) ----------
+  var monthDlg = document.getElementById("monthDialog");
+  function nextMonthId(){
+    var last = state.months.length ? state.months[state.months.length - 1].id : null;
+    var d = new Date();
+    var y = d.getFullYear(), mo = d.getMonth() + 1;
+    if(last){ y = Number(last.slice(0, 4)); mo = Number(last.slice(5, 7)) + 1; if(mo > 12){ mo = 1; y++; } }
+    return y + "-" + pad(mo);
+  }
+  document.getElementById("newMonthBtn").addEventListener("click", function(){
+    if(!isAdmin()){ return; }
+    var count = state.sections.reduce(function(n, s){ return n + s.rows.length; }, 0);
+    document.getElementById("monthValue").value = nextMonthId();
+    document.getElementById("monthError").textContent = "";
+    var carry = document.getElementById("monthCarry");
+    carry.checked = count > 0;
+    carry.disabled = count === 0;
+    document.getElementById("monthDialogDesc").textContent = monthId
+      ? "지금 보고 있는 " + monthLabel(monthId) + " 시트(구분 " + state.sections.length + "개 · 항목 " + count + "건)를 바탕으로 새 달 시트를 만듭니다."
+      : "첫 달 시트를 만듭니다.";
+    monthDlg.showModal();
+  });
+  document.getElementById("monthCancel").addEventListener("click", function(){ monthDlg.close(); });
+  document.getElementById("monthForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    if(!isAdmin()){ return; }
+    var id = document.getElementById("monthValue").value, err = document.getElementById("monthError");
+    if(!/^\d{4}-\d{2}$/.test(id)){ err.textContent = "월을 선택해 주세요."; return; }
+    if(findMonth(id)){ err.textContent = monthLabel(id) + " 시트가 이미 있습니다."; return; }
+    var carry = document.getElementById("monthCarry").checked;
+    var from = currentMonth();
+    var m = { id: id, title: from ? from.title : SEED.title, notices: clone(from ? from.notices : SEED.notices) };
+    // Carry the sheet forward with fresh ids; the reply columns and 체크 start empty each month.
+    var sections = !carry ? [] : state.sections.map(function(s, i){
+      return { id: uid("s"), sort_order: i, name: s.name, note: s.note, rows: s.rows.map(function(r, j){
+        var n = clone(r);
+        n.id = uid("r"); n.sort_order = j;
+        n.urgent = false; n.extend = ""; n.reply = ""; n.owner_ok = false; n.owner_ok_by = ""; n.owner_ok_at = null;
+        return n;
+      }) };
+    });
+    var count = sections.reduce(function(n, s){ return n + s.rows.length; }, 0);
+    var submit = document.getElementById("monthSubmit");
+    submit.disabled = true;
+    remoteStore.createMonth(m, sections).then(function(ok){
+      submit.disabled = false;
+      if(!ok){ err.textContent = "만들지 못했습니다. 연결을 확인해 주세요."; return; }
+      if(!findMonth(id)){ state.months.push(m); state.months.sort(function(a, b){ return a.id < b.id ? -1 : 1; }); }
+      monthDlg.close();
+      var fromId = monthId;
+      return switchMonth(id).then(function(){
+        logAction("새 달 시트 생성" + (carry && fromId ? " · " + monthLabel(fromId) + "에서 " + count + "건 이어받음" : ""));
+      });
+    });
+  });
+
+  document.getElementById("deleteMonthBtn").addEventListener("click", function(){
+    if(!isAdmin() || !monthId || state.months.length < 2){ return; }
+    var id = monthId, count = state.sections.reduce(function(n, s){ return n + s.rows.length; }, 0);
+    confirmDelete(monthLabel(id) + " 시트를 삭제할까요?",
+      "이 달의 구분 " + state.sections.length + "개, 항목 " + count + "건, 변경 이력이 모두 삭제되며 되돌릴 수 없습니다.").then(function(ok){
+      if(!ok){ return; }
+      remoteStore.deleteMonth(id).then(function(done){
+        if(!done){ toast("삭제하지 못했습니다. 연결을 확인해 주세요."); return; }
+        state.months = state.months.filter(function(m){ return m.id !== id; });
+        toast(monthLabel(id) + " 시트를 삭제했습니다.");
+        switchMonth(state.months[state.months.length - 1].id);
+      });
+    });
+  });
+
+  // ---------- 타이틀·설명 문구 (관리자) ----------
+  var headStart = {};
+  ["titleInput", "noticesInput"].forEach(function(elId){
+    var el = document.getElementById(elId);
+    el.addEventListener("focus", function(){ headStart[elId] = el.value; });
+    el.addEventListener("input", function(){
+      var m = currentMonth();
+      if(!m || !isAdmin()){ return; }
+      if(elId === "titleInput"){
+        m.title = el.value;
+        store.monthChanged(m, ["title"]);
+      }else{
+        m.notices = el.value.split("\n").map(function(t){ return t.trim(); }).filter(Boolean);
+        store.monthChanged(m, ["notices"]);
+      }
+    });
+    el.addEventListener("blur", function(){
+      if(REMOTE){ scheduleFlush(0); }
+      if(elId in headStart && headStart[elId] !== el.value && currentMonth()){
+        logAction(elId === "titleInput" ? "타이틀 수정" : "설명 문구 수정");
+      }
+      delete headStart[elId];
+    });
+  });
+
+  // ---------- 변경 이력 초기화 (관리자) ----------
+  document.getElementById("logResetBtn").addEventListener("click", function(){
+    if(!isAdmin() || !monthId){ return; }
+    var n = state.logs.length;
+    confirmDelete(monthLabel(monthId) + " 변경 이력을 초기화할까요?", "이 달의 이력 " + n + "건이 모두 삭제되며 되돌릴 수 없습니다.", "초기화").then(function(ok){
+      if(!ok){ return; }
+      Promise.resolve(store.logsReset()).then(function(done){
+        if(done === false){ toast("초기화하지 못했습니다. 연결을 확인해 주세요."); return; }
+        state.logs = [];
+        logShown = LOG_PAGE;
+        renderLogs();
+        logAction("변경 이력 초기화 (" + n + "건 삭제)");
+      });
+    });
   });
 
   // ---------- dialog / toast / notice ----------
@@ -1733,7 +2099,10 @@
     setStatus("busy", "불러오는 중…");
     store.load().then(function(){
       loaded = true;
+      if(REMOTE && monthId){ try{ history.replaceState(null, "", "#" + monthId); }catch(e){} }
       render();
+      renderMonths();
+      renderHeader();
       renderLogs();
       fillTeamOptions();
       if(REMOTE){
@@ -1772,6 +2141,9 @@
     role.title = admin ? "모든 칸과 구분·항목을 편집할 수 있습니다." : "기간 연장, 추가 내용 기재, 담당자 확인만 편집할 수 있습니다.";
     document.getElementById("addSectionBtn").hidden = !admin;
     document.getElementById("importBtn").hidden = !admin;
+    document.getElementById("logResetBtn").hidden = !admin;
+    renderMonths();
+    renderHeader();
   }
   function fillTeamOptions(){
     var teams = {};

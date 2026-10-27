@@ -7,6 +7,15 @@
 -- 다른 행이나 다른 칸을 고쳐도 서로의 입력을 덮어쓰지 않는다.
 
 -- 1. 테이블 ---------------------------------------------------------------
+-- 월별 시트: id는 "YYYY-MM". 구분·항목·이력은 month_id로 어느 달 시트에 속하는지 나타낸다.
+create table if not exists eec_months (
+  id          text primary key,
+  title       text not null default '',
+  notices     jsonb not null default '[]'::jsonb,       -- 서브타이틀 설명 문구 (한 줄씩)
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
 create table if not exists eec_sections (
   id          text primary key,
   sort_order  double precision not null default 0,
@@ -52,6 +61,14 @@ create table if not exists eec_logs (
 );
 create index if not exists eec_logs_created_idx on eec_logs(created_at desc);
 
+-- 월별 시트 연결 (달을 지우면 그 달의 구분·항목도 함께 지워진다)
+alter table eec_sections add column if not exists month_id text references eec_months(id) on delete cascade;
+alter table eec_rows add column if not exists month_id text references eec_months(id) on delete cascade;
+alter table eec_logs add column if not exists month_id text;
+create index if not exists eec_sections_month_idx on eec_sections(month_id);
+create index if not exists eec_rows_month_idx on eec_rows(month_id);
+create index if not exists eec_logs_month_idx on eec_logs(month_id, created_at desc);
+
 -- updated_at 자동 갱신
 create or replace function eec_touch() returns trigger language plpgsql as $$
 begin
@@ -62,6 +79,8 @@ drop trigger if exists eec_sections_touch on eec_sections;
 create trigger eec_sections_touch before update on eec_sections for each row execute function eec_touch();
 drop trigger if exists eec_rows_touch on eec_rows;
 create trigger eec_rows_touch before update on eec_rows for each row execute function eec_touch();
+drop trigger if exists eec_months_touch on eec_months;
+create trigger eec_months_touch before update on eec_months for each row execute function eec_touch();
 
 -- 2. 접근 권한 --------------------------------------------------------------
 --    로그인 기능이 없으므로 링크와 anon key를 아는 사람은 누구나 읽고 쓸 수 있다
@@ -73,16 +92,22 @@ drop policy if exists "anon all eec_sections" on eec_sections;
 create policy "anon all eec_sections" on eec_sections for all to anon using (true) with check (true);
 drop policy if exists "anon all eec_rows" on eec_rows;
 create policy "anon all eec_rows" on eec_rows for all to anon using (true) with check (true);
+alter table eec_months enable row level security;
+drop policy if exists "anon all eec_months" on eec_months;
+create policy "anon all eec_months" on eec_months for all to anon using (true) with check (true);
 
 alter table eec_logs enable row level security;
 drop policy if exists "anon read eec_logs" on eec_logs;
 create policy "anon read eec_logs" on eec_logs for select to anon using (true);
 drop policy if exists "anon add eec_logs" on eec_logs;
 create policy "anon add eec_logs" on eec_logs for insert to anon with check (true);
+-- 관리자 화면의 '이력 초기화'가 지울 수 있도록 삭제를 허용한다(수정은 막아 둔다).
+drop policy if exists "anon delete eec_logs" on eec_logs;
+create policy "anon delete eec_logs" on eec_logs for delete to anon using (true);
 
 grant usage on schema public to anon;
-grant select, insert, update, delete on eec_sections, eec_rows to anon;
-grant select, insert on eec_logs to anon;
+grant select, insert, update, delete on eec_sections, eec_rows, eec_months to anon;
+grant select, insert, delete on eec_logs to anon;
 
 -- 3. 실시간 동기화 ----------------------------------------------------------
 --    한 사람이 고친 내용이 다른 사람 화면에 바로 반영되도록 변경 이벤트를 브로드캐스트한다.
@@ -97,10 +122,18 @@ begin
   if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'eec_logs') then
     alter publication supabase_realtime add table eec_logs;
   end if;
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'eec_months') then
+    alter publication supabase_realtime add table eec_months;
+  end if;
 end $$;
 
 -- 4. 초기 데이터 (공식온라인스토어 26년 10월 진행중인 이벤트 연장 건_v0.1 '확인 부탁 드립니다!' 탭) ----
 --    이미 같은 id가 있으면 건너뛰므로, 다시 실행해도 팀이 고친 내용을 되돌리지 않는다.
+
+insert into eec_months (id, title, notices) values
+  ('2026-10', '진행 중인 이벤트 연장, 종료 확인 건',
+   '["장기 프로모션은 최대 노출 기간을 기재해주세요.", "사전예약 관련 이벤트 및 배너는 테이블에 기재하지 않습니다."]'::jsonb)
+on conflict (id) do nothing;
 
 insert into eec_sections (id, sort_order, name, note) values
   ('s1', 0, '진행중인 이벤트 (모바일 온라인 가입혜택)', '* 변경 내용 및 연장 여부 확인 필요. 별도 수정 사항 없으시면 Y 처리만 부탁드립니다.'),
@@ -181,8 +214,13 @@ insert into eec_rows (id, section_id, sort_order, cat, sub, checks, area, team, 
 - 갤럭시 탭 S12+', '디지털커머스팀', '최종원')
 on conflict (id) do nothing;
 
+-- 달이 정해지지 않은 데이터(초기 데이터, 월별 시트 도입 전 데이터)는 2026년 10월 시트로 둔다.
+update eec_sections set month_id = '2026-10' where month_id is null;
+update eec_rows set month_id = '2026-10' where month_id is null;
+update eec_logs set month_id = '2026-10' where month_id is null;
+
 -- 5. API(PostgREST)가 새 테이블을 바로 인식하도록 스키마 캐시를 갱신한다.
 notify pgrst, 'reload schema';
 
 -- 확인용: 아래 결과가 sections 7 / rows 35 이면 설정 완료.
-select (select count(*) from eec_sections) as sections, (select count(*) from eec_rows) as rows;
+select (select count(*) from eec_months) as months, (select count(*) from eec_sections) as sections, (select count(*) from eec_rows) as rows;

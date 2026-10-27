@@ -134,7 +134,8 @@
   .log__meta{ margin-top:2px; font-family: var(--font-mono); font-size:11px; color: var(--muted); }
   .log__empty{ color: var(--muted); font-size:0.8125rem; padding: 8px 0; }
   .log__more{ margin-top: var(--space-sm); }
-  .log__more[hidden]{ display:none; }
+  /* .btn sets display, which would otherwise beat the hidden attribute. */
+  .btn[hidden]{ display:none; }
 
   /* ---------- 작성자 입력 ---------- */
   .user-dialog{ width: min(92vw, 420px); }

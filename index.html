@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>이벤트 연장 확인</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  /* Sibling tool of banner-status-manager — same Cobalt OKLCH tokens and type stack, reused
+     deliberately for family consistency. The sheet itself is the page: no hero/nav/footer. */
+  :root{
+    --primary: oklch(58% 0.20 256);
+    --primary-focus: oklch(64% 0.19 256);
+    --primary-soft: oklch(58% 0.20 256 / 12%);
+    --on-primary: oklch(99% 0 0);
+    --text: oklch(24% 0.020 258);
+    --muted: oklch(46% 0.016 257);
+    --muted-80: oklch(30% 0.018 258);
+    --text-disabled: oklch(68% 0.010 255);
+    --divider: oklch(93.5% 0.005 250);
+    --hairline: oklch(88% 0.008 250);
+    --hairline-strong: oklch(70% 0.02 256);
+    --error: oklch(58% 0.22 25);
+    --error-soft: oklch(58% 0.22 25 / 15%);
+    --error-ink: oklch(30% 0.16 25);
+    --scrim: oklch(24% 0.02 258 / 86%);
+    --surface-pearl: oklch(97.3% 0.005 250);
+    --disabled: oklch(92% 0.006 250);
+    --surface: oklch(99.1% 0.003 250);
+    --bg: oklch(97% 0.006 250);
+
+    --success: oklch(56% 0.14 150);
+    --success-soft: oklch(56% 0.14 150 / 14%);
+    --success-ink: oklch(28% 0.09 150);
+    --warn: oklch(60% 0.15 75);
+    --warn-soft: oklch(60% 0.15 75 / 16%);
+    --warn-ink: oklch(32% 0.11 65);
+
+    /* 마감 임박 행 — the sheet's yellow-cell convention, softened just enough to keep text legible. */
+    --urgent-bg: oklch(95.5% 0.115 102);
+    --urgent-bg-hover: oklch(93% 0.13 100);
+    --urgent-edge: oklch(80% 0.16 95);
+
+    --radius: 14px;
+    --radius-md: 8px;
+    --radius-sm: 6px;
+    --radius-pill: 8px;
+
+    --font-display: 'Space Grotesk', 'Pretendard', -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif;
+    --font-body: 'Pretendard', 'Inter', -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif;
+    --font-mono: 'JetBrains Mono', 'Pretendard', ui-monospace, "SFMono-Regular", monospace;
+
+    --space-3xs: 0.125rem; --space-2xs: 0.25rem; --space-xs: 0.5rem; --space-sm: 0.75rem;
+    --space-md: 1rem; --space-lg: 1.5rem; --space-xl: 2.5rem; --space-2xl: 4rem;
+
+    --dur-micro: 120ms; --dur-short: 220ms; --dur-long: 420ms;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+
+    --z-sticky: 200; --z-modal: 400; --z-toast: 500;
+  }
+
+  *{ box-sizing: border-box; }
+  html, body{ margin:0; padding:0; }
+  html{ overflow-x: clip; }
+  body{
+    overflow-x: clip;
+    font-family: var(--font-body);
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,h2,h3{ font-family: var(--font-display); font-weight:600; letter-spacing:-0.02em; margin:0; }
+  button, input, select, textarea{ font-family: inherit; font-size: inherit; color: inherit; }
+  .visually-hidden{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+
+  /* ---------- layout ---------- */
+  .app{ max-width: 1880px; margin: 0 auto; padding: var(--space-xl) var(--space-lg) var(--space-2xl); }
+  @media (max-width: 40rem){ .app{ padding: var(--space-lg) var(--space-md) var(--space-xl); } }
+
+  .app__header{
+    display:flex; justify-content:space-between; align-items:flex-end; gap: var(--space-lg);
+    margin-bottom: var(--space-lg); flex-wrap: wrap;
+  }
+  .app__header h1{ font-size: clamp(1.5rem, 1.6vw + 1.1rem, 2rem); margin-bottom: var(--space-xs); }
+  .notices{ margin:0; padding:0; list-style:none; color: var(--muted); font-size: 0.875rem; }
+  .notices li{ padding-left: 1em; text-indent: -1em; }
+  .notices li::before{ content:"* "; }
+  .app__meta{ display:flex; align-items:center; gap: var(--space-sm); flex-wrap:wrap; }
+  .app__meta-text{ font-family: var(--font-mono); font-size:11.5px; color: var(--muted); white-space:nowrap; }
+  .sync{ display:inline-flex; align-items:center; gap:6px; }
+  .sync::before{ content:""; width:7px; height:7px; border-radius:50%; background: var(--text-disabled); flex-shrink:0; }
+  .sync[data-state="online"]::before{ background: var(--success); }
+  .sync[data-state="busy"]::before{ background: var(--warn); }
+  .sync[data-state="offline"]::before, .sync[data-state="error"]::before{ background: var(--error); }
+  .sync[data-state="error"]{ color: var(--error-ink); }
+
+  .notice{
+    display:flex; align-items:center; gap: var(--space-sm); flex-wrap:wrap;
+    background: var(--error-soft); color: var(--error-ink); border-radius: var(--radius-md);
+    padding: 12px 16px; margin-bottom: var(--space-md); font-size:0.875rem;
+  }
+  .notice[hidden]{ display:none; }
+  .notice code{ font-family: var(--font-mono); font-size:0.8125rem; background: var(--surface); padding:1px 5px; border-radius:4px; }
+
+  /* ---------- buttons ---------- */
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap: var(--space-xs);
+    height:40px; padding: 0 16px; border-radius: var(--radius-md); border:1px solid transparent;
+    font-weight:600; font-size:0.875rem; white-space:nowrap; cursor:pointer;
+    transition: background-color var(--dur-short) var(--ease-out),
+                border-color var(--dur-short) var(--ease-out),
+                color var(--dur-short) var(--ease-out),
+                transform 100ms var(--ease-out);
+  }
+  .btn:active{ transform: translateY(1px); }
+  .btn:focus-visible{ outline:2px solid var(--primary-focus); outline-offset:2px; }
+  .btn--primary{ background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+  .btn--primary:hover{ background: var(--primary-focus); border-color: var(--primary-focus); }
+  .btn--ghost{ background: var(--surface); color: var(--text); border-color: var(--hairline); }
+  .btn--ghost:hover{ border-color: var(--hairline-strong); background: var(--surface-pearl); }
+  .btn--danger{ background: var(--error); color: var(--on-primary); border-color: var(--error); }
+  .btn--sm{ height:32px; padding:0 12px; font-size:0.8125rem; }
+  .btn--icon{
+    width:28px; height:28px; padding:0; border-radius: var(--radius-sm);
+    background: transparent; border:1px solid transparent; color: var(--muted);
+    position:relative; flex-shrink:0;
+  }
+  .btn--icon::before{ content:""; position:absolute; inset:-6px; }
+  .btn--icon:hover:not(:disabled){ background: var(--surface-pearl); border-color: var(--hairline); color: var(--text); }
+  .btn--icon:disabled{ opacity:0.35; cursor:not-allowed; }
+  .btn--icon.is-danger:hover:not(:disabled){ background: var(--error-soft); color: var(--error-ink); border-color: var(--error); }
+  .btn--icon--xs{ width:22px; height:22px; }
+  .btn--icon--xs::before{ inset:-11px; }
+  .btn--icon--xs .icon{ width:13px; height:13px; }
+  .icon{ width:16px; height:16px; stroke: currentColor; stroke-width:1.8; fill:none; stroke-linecap:round; stroke-linejoin:round; display:block; }
+
+  /* ---------- toolbar / summary ---------- */
+  .toolbar{
+    display:flex; align-items:center; justify-content:space-between; gap: var(--space-md);
+    margin-bottom: var(--space-md); flex-wrap:wrap;
+  }
+  .toolbar__left, .toolbar__right{ display:flex; align-items:center; gap: var(--space-xs); flex-wrap:wrap; }
+  .summary{ display:flex; gap: var(--space-2xs); flex-wrap:wrap; }
+  .summary__item{
+    font-size:0.75rem; font-weight:600; color: var(--muted-80);
+    background: var(--surface); border:1px solid var(--hairline); border-radius: var(--radius-pill);
+    padding: 4px 10px; white-space:nowrap;
+  }
+  .summary__item b{ font-family: var(--font-mono); font-weight:600; margin-left:4px; }
+  .summary__item[data-tone="urgent"]{ background: var(--urgent-bg); border-color: var(--urgent-edge); color: var(--warn-ink); }
+  .summary__item[data-tone="y"]{ background: var(--success-soft); border-color: transparent; color: var(--success-ink); }
+  .summary__item[data-tone="n"]{ background: var(--error-soft); border-color: transparent; color: var(--error-ink); }
+
+  .filter-toggle{
+    display:inline-flex; align-items:center; gap:8px; height:32px; padding:0 12px;
+    border:1px solid var(--hairline); border-radius: var(--radius-md); background: var(--surface);
+    font-size:0.8125rem; font-weight:600; cursor:pointer; user-select:none;
+  }
+  .filter-toggle:hover{ border-color: var(--hairline-strong); }
+  .filter-toggle:has(input:checked){ background: var(--urgent-bg); border-color: var(--urgent-edge); color: var(--warn-ink); }
+  .filter-toggle input{ margin:0; accent-color: var(--warn); }
+
+  /* ---------- sheet ---------- */
+  .sheet-wrap{
+    background: var(--surface); border:1px solid var(--hairline); border-radius: var(--radius);
+    overflow:auto; max-height: calc(100vh - 210px); min-height: 320px;
+  }
+  table.sheet{ border-collapse:separate; border-spacing:0; width:100%; min-width: 1880px; font-size:0.8125rem; line-height:1.4; table-layout:fixed; }
+  .sheet thead th{
+    position: sticky; z-index: 2; background: var(--surface-pearl);
+    text-align:left; font-size:0.75rem; font-weight:600; color: var(--muted-80);
+    padding: 7px 10px; border-bottom:1px solid var(--hairline); white-space:nowrap;
+  }
+  .sheet thead tr:first-child th{ top:0; }
+  .sheet thead tr:nth-child(2) th{ top: 33px; font-size:11px; color: var(--muted); font-weight:500; }
+  .sheet thead th[rowspan]{ vertical-align: bottom; }
+  .sheet thead th.th-group{ text-align:center; border-bottom-color: var(--divider); }
+  .sheet thead th + th{ border-left:1px solid var(--divider); }
+  .sheet thead tr:nth-child(2) th{ border-left:1px solid var(--divider); }
+
+  .sheet td{
+    padding: 4px 6px; border-bottom:1px solid var(--divider); vertical-align:top;
+    transition: background-color var(--dur-short) var(--ease-out);
+  }
+  .sheet td + td{ border-left:1px solid var(--divider); }
+  .sheet tr.item:hover td{ background: oklch(58% 0.20 256 / 4%); }
+  .sheet tr.item.is-urgent td{ background: var(--urgent-bg); border-bottom-color: oklch(86% 0.12 98); }
+  .sheet tr.item.is-urgent:hover td{ background: var(--urgent-bg-hover); }
+  .sheet tr.item.is-urgent td:first-child{ box-shadow: inset 3px 0 0 var(--urgent-edge); }
+
+  /* section (구분) header */
+  .section-head th{
+    background: var(--bg); border-bottom:1px solid var(--hairline); border-top:1px solid var(--hairline);
+    padding: 10px 12px; text-align:left; font-weight:400;
+  }
+  tbody.section:first-of-type .section-head th{ border-top:none; }
+  .section-head__inner{
+    position: sticky; left: 12px; display:flex; align-items:flex-start; gap: var(--space-sm);
+    width: min(1100px, calc(100vw - 96px)); flex-wrap:wrap;
+  }
+  .section-name{
+    font-family: var(--font-display); font-weight:600; font-size:0.9375rem; letter-spacing:-0.01em;
+    border:1px solid transparent; border-radius: var(--radius-sm); background: transparent;
+    padding: 3px 6px; min-width: 12ch; width: 30ch; max-width: 100%;
+  }
+  .section-name:hover{ border-color: var(--hairline); background: var(--surface); }
+  .section-name:focus{ outline:2px solid var(--primary-focus); outline-offset:1px; background: var(--surface); }
+  .section-count{
+    font-family: var(--font-mono); font-size:11.5px; font-weight:600; color: var(--muted);
+    background: var(--surface); border:1px solid var(--hairline); border-radius: var(--radius-pill);
+    padding: 2px 8px; margin-top:4px;
+  }
+  .section-note{
+    flex: 1 1 360px; font-size:0.75rem; color: var(--muted); border:1px solid transparent; background:transparent;
+    border-radius: var(--radius-sm); padding: 4px 6px; resize:none; field-sizing: content; min-height: 1.6em; line-height:1.5;
+  }
+  .section-note:hover{ border-color: var(--hairline); background: var(--surface); }
+  .section-note:focus{ outline:2px solid var(--primary-focus); outline-offset:1px; background: var(--surface); color: var(--text); }
+  .section-actions{ display:flex; gap:2px; align-items:center; margin-left:auto; }
+  .empty-row td{ text-align:center; color: var(--muted); padding: 18px; font-size:0.8125rem; }
+
+  /* spreadsheet-style cell editors: invisible until hovered/focused */
+  .cell-input{
+    display:block; width:100%; border:1px solid transparent; border-radius:4px; background: transparent;
+    padding: 4px 6px; line-height:1.4; resize:none; overflow:hidden; field-sizing: content; min-height: 28px;
+    outline: 2px solid transparent; outline-offset:0;
+    transition: background-color var(--dur-micro) var(--ease-out), border-color var(--dur-micro) var(--ease-out);
+  }
+  .cell-input:hover{ border-color: var(--hairline); background: oklch(100% 0 0 / 55%); }
+  .cell-input:focus{ outline-color: var(--primary-focus); background: var(--surface); border-color: transparent; }
+  .cell-input::placeholder{ color: var(--text-disabled); }
+  .cell-input--strong{ font-weight:600; }
+  .cell-input--sm{ font-size:0.75rem; }
+  input.cell-date{ font-family: var(--font-mono); font-size:0.75rem; height:28px; padding: 0 4px; min-width:0; }
+
+  .c-center{ text-align:center; }
+  .urgent-box{
+    display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; cursor:pointer; border-radius: var(--radius-sm);
+  }
+  .urgent-box:hover{ background: var(--warn-soft); }
+  .urgent-box input{ width:16px; height:16px; margin:0; accent-color: oklch(70% 0.16 85); cursor:pointer; }
+
+  /* 확인 사항: a list of (대분류, 일시) pairs inside one cell */
+  .checks{ display:flex; flex-direction:column; gap:2px; }
+  .check{ display:grid; grid-template-columns: minmax(0,1fr) 270px; gap: 6px; align-items:start; }
+  .check + .check{ border-top:1px dashed var(--divider); padding-top:2px; }
+  .check__when{ display:flex; align-items:center; gap:4px; }
+  .check__when input{ flex:1; }
+  .dday{
+    font-family: var(--font-mono); font-size:10.5px; font-weight:600; padding: 1px 5px; border-radius:4px;
+    white-space:nowrap; min-width: 40px; text-align:center;
+    background: var(--disabled); color: var(--muted-80);
+  }
+  .dday:empty{ visibility:hidden; }
+  .dday[data-tone="soon"]{ background: var(--warn-soft); color: var(--warn-ink); }
+  .dday[data-tone="today"]{ background: var(--error-soft); color: var(--error-ink); }
+  .dday[data-tone="past"]{ background: transparent; color: var(--text-disabled); text-decoration: line-through; }
+  .check-add{
+    align-self:flex-start; display:inline-flex; align-items:center; gap:4px; border:none; background:none;
+    color: var(--muted); font-size:0.75rem; font-weight:600; padding: 2px 6px; border-radius:4px; cursor:pointer;
+  }
+  .check-add:hover{ color: var(--primary); background: var(--primary-soft); }
+  .check-add:focus-visible{ outline:2px solid var(--primary-focus); outline-offset:1px; }
+  .check-add .icon{ width:12px; height:12px; }
+
+  /* 기간 연장 Y / N */
+  .yn{ display:inline-flex; border:1px solid var(--hairline); border-radius: var(--radius-sm); overflow:hidden; background: var(--surface); margin-top:2px; }
+  .yn__opt{ position:relative; }
+  .yn__opt input{ position:absolute; opacity:0; inset:0; margin:0; cursor:pointer; }
+  .yn__opt span{
+    display:flex; align-items:center; justify-content:center; width:36px; height:28px;
+    font-family: var(--font-mono); font-weight:600; font-size:0.8125rem; color: var(--muted);
+    transition: background-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out);
+  }
+  .yn__opt + .yn__opt span{ border-left:1px solid var(--hairline); }
+  .yn__opt:hover span{ background: var(--surface-pearl); color: var(--text); }
+  .yn__opt input:focus-visible + span{ outline:2px solid var(--primary-focus); outline-offset:-2px; }
+  .yn__opt--y input:checked + span{ background: var(--success); color: var(--on-primary); }
+  .yn__opt--n input:checked + span{ background: var(--error); color: var(--on-primary); }
+
+  .row-actions{ display:flex; gap:0; align-items:center; justify-content:center; flex-wrap:wrap; padding-top:3px; }
+
+  /* ---------- dialog ---------- */
+  dialog{
+    padding:0; border:none; border-radius: var(--radius); background: var(--surface);
+    box-shadow: 0 12px 48px oklch(24% 0.02 258 / 22%);
+    width: min(92vw, 380px); position: fixed; inset:0; margin:auto; height:fit-content;
+  }
+  dialog::backdrop{ background: var(--scrim); }
+  dialog[open]{ animation: dialog-in var(--dur-long) var(--ease-out); }
+  @keyframes dialog-in{ from{ opacity:0; transform: scale(0.96); } to{ opacity:1; transform:none; } }
+  .dialog__body{ padding: 22px 24px 8px; }
+  .dialog__body h3{ font-size:1.0625rem; margin-bottom: var(--space-xs); }
+  .dialog__body p{ margin:0; color: var(--muted-80); font-size:0.875rem; }
+  .dialog__foot{ display:flex; justify-content:flex-end; gap: var(--space-sm); padding: 16px 24px 20px; }
+
+  /* ---------- toast ---------- */
+  .toast-region{
+    position:fixed; right: var(--space-lg); bottom: var(--space-lg); z-index: var(--z-toast);
+    display:flex; flex-direction:column; gap: var(--space-xs); width:min(92vw, 380px);
+  }
+  .toast{
+    background: var(--text); color: var(--surface); border-radius: var(--radius-sm);
+    padding: 12px 14px; font-size:0.8125rem; display:flex; align-items:center; gap: var(--space-sm);
+    box-shadow: 0 8px 24px oklch(24% 0.02 258 / 20%);
+    animation: toast-in var(--dur-long) var(--ease-out);
+  }
+  @keyframes toast-in{ from{ opacity:0; transform: translateY(8px); } to{ opacity:1; transform:none; } }
+  .toast__msg{ flex:1; }
+  .toast__undo{ background:none; border:none; color: var(--primary-focus); font-weight:700; cursor:pointer; padding:4px 6px; border-radius:4px; }
+
+  @media (max-width: 40rem){
+    .sheet-wrap{ max-height: none; }
+    .toolbar__right{ width:100%; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{ animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4M7 9l5-5 5 5M5 20h14"/></symbol>
+</svg>
+
+<div class="app">
+  <header class="app__header">
+    <div>
+      <h1 id="docTitle"></h1>
+      <ul class="notices" id="notices"></ul>
+    </div>
+    <div class="app__meta">
+      <span class="app__meta-text sync" id="saveStatus" aria-live="polite"></span>
+      <span class="app__meta-text">v<span id="appVersion"></span></span>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="toolbar__left">
+      <div class="summary" id="summary" aria-live="polite"></div>
+      <label class="filter-toggle"><input type="checkbox" id="onlyUrgent"> 마감 임박만 보기</label>
+    </div>
+    <div class="toolbar__right">
+      <button type="button" class="btn btn--ghost btn--sm" id="exportBtn"><svg class="icon"><use href="#i-download"/></svg>내보내기</button>
+      <button type="button" class="btn btn--ghost btn--sm" id="importBtn"><svg class="icon"><use href="#i-upload"/></svg>가져오기</button>
+      <input type="file" id="importFile" accept="application/json,.json" hidden>
+      <button type="button" class="btn btn--primary btn--sm" id="addSectionBtn"><svg class="icon"><use href="#i-plus"/></svg>구분 추가</button>
+    </div>
+  </div>
+
+  <div class="notice" id="notice" role="alert" hidden></div>
+
+  <div class="sheet-wrap">
+    <table class="sheet" id="sheet">
+      <colgroup>
+        <col style="width:56px">
+        <col style="width:130px">
+        <col style="width:210px">
+        <col style="width:250px">
+        <col style="width:290px">
+        <col style="width:170px">
+        <col style="width:96px">
+        <col style="width:230px">
+        <col style="width:130px">
+        <col style="width:100px">
+        <col style="width:150px">
+        <col style="width:64px">
+      </colgroup>
+      <thead>
+        <tr>
+          <th rowspan="2" class="c-center">임박</th>
+          <th colspan="2" class="th-group">이벤트 및 단말</th>
+          <th colspan="2" class="th-group">확인 사항</th>
+          <th rowspan="2">적용 영역</th>
+          <th rowspan="2" class="c-center">기간 연장</th>
+          <th rowspan="2">추가 내용 기재</th>
+          <th colspan="2" class="th-group">요청자</th>
+          <th rowspan="2">비고</th>
+          <th rowspan="2"><span class="visually-hidden">행 관리</span></th>
+        </tr>
+        <tr>
+          <th>대분류</th>
+          <th>소분류</th>
+          <th>대분류</th>
+          <th>일시</th>
+          <th>팀</th>
+          <th>담당자</th>
+        </tr>
+      </thead>
+    </table>
+  </div>
+</div>
+
+<dialog id="confirmDialog" class="confirm-dialog" aria-labelledby="confirmTitle">
+  <form method="dialog">
+    <div class="dialog__body">
+      <h3 id="confirmTitle"></h3>
+      <p id="confirmMessage"></p>
+    </div>
+    <div class="dialog__foot">
+      <button type="submit" class="btn btn--ghost btn--sm" value="cancel">취소</button>
+      <button type="submit" class="btn btn--danger btn--sm" value="ok" id="confirmOk">삭제</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast-region" id="toastRegion" aria-live="polite"></div>
+
+<script type="application/json" id="seedData">{"title":"진행중인 이벤트 연장/종료 확인 건","notices":["장기 프로모션으로 노출 기간 길게 적용 될 이벤트의 경우 최대 노출 할 기간 기재 부탁드립니다.","사전예약 관련 이벤트 및 배너는 본 내용에 미기재 되어 있습니다."],"sections":[{"id":"s1","name":"진행중인 이벤트 (모바일 온라인 가입혜택)","note":"* 변경 내용 및 연장 여부 확인 필요. 별도 수정 사항 없으시면 Y 처리만 부탁드립니다.","rows":[{"id":"r1","urgent":false,"cat":"모듈 이벤트","sub":"iPhone 최대 지원금 혜택","checks":[{"label":"운영 기간","at":"2026-11-30T23:59"}],"area":"✦STG: 진행 제외\n✦운영: 82221","extend":"","reply":"","team":"디지털커머스팀","owner":"복다솜","memo":""},{"id":"r2","urgent":false,"cat":"","sub":"iPhone Duo 출시 기념 이벤트","checks":[{"label":"운영 기간","at":"2026-10-26T23:59"}],"area":"✦STG: 2921\n✦운영: 82570","extend":"","reply":"","team":"디지털채널혁신팀","owner":"서효정","memo":""},{"id":"r3","urgent":false,"cat":"모듈 이벤트","sub":"갤럭시 브랜드관","checks":[{"label":"운영 기간","at":"2026-10-31T23:59"}],"area":"✦STG: 진행 제외\n✦운영: 82534","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r4","urgent":false,"cat":"외부 이벤트","sub":"10월 Npay 3,000P 적립!","checks":[{"label":"운영 기간","at":"2026-10-31T23:59"}],"area":"✦STG: 2525\n✦운영: 82203","extend":"","reply":"","team":"디지털그로스마케팅팀","owner":"김정연","memo":""},{"id":"r5","urgent":false,"cat":"(히든) MO·App 전용/ 모듈 이벤트","sub":"갤럭시·iPhone17 시리즈 시크릿 단말 할인 혜택","checks":[{"label":"운영 기간","at":"2026-11-30T23:59"}],"area":"✦STG: 진행 제외\n✦운영: 82571","extend":"","reply":"","team":"디지털커머스팀","owner":"박상인","memo":""},{"id":"r6","urgent":false,"cat":"(히든) MO·App 전용 이벤트","sub":"U+one앱 간편 이용안내","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"✦STG: 2632\n✦운영: 82296","extend":"","reply":"","team":"디지털채널혁신팀","owner":"이민애","memo":""},{"id":"r7","urgent":false,"cat":"","sub":"신분증 인증/안면 인증 추가 안내","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"✦STG: 2593\n✦운영: 82258","extend":"","reply":"","team":"디지털채널혁신팀","owner":"손범열","memo":""},{"id":"r8","urgent":false,"cat":"","sub":"친구 추천 이벤트","checks":[{"label":"운영 기간","at":"2026-12-31T16:59"}],"area":"✦STG: 1307\n✦운영: 81244","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을,복다솜,박상인","memo":""},{"id":"r9","urgent":false,"cat":"","sub":"중고폰 갤럭시 시리즈의 특별혜택","checks":[{"label":"운영 기간","at":"2026-12-31T16:59"}],"area":"✦STG: 239\n✦운영: 239","extend":"","reply":"","team":"디지털커머스팀","owner":"이승민","memo":""}]},{"id":"s2","name":"진행중인 이벤트 (너겟)","note":"* 변경 내용 및 연장 여부 확인 필요. 별도 수정 사항 없으시면 Y 처리만 부탁드립니다.","rows":[{"id":"r10","urgent":false,"cat":"","sub":"10월 너겟 친구 추천 이벤트","checks":[{"label":"운영 기간","at":"2026-10-31T23:59"}],"area":"✦STG: 2597\n✦운영: 82262","extend":"","reply":"","team":"디지털커머스팀","owner":"문지원","memo":""},{"id":"r11","urgent":false,"cat":"","sub":"가입하고 너겟 혜택 받자","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"✦STG: 2026\n✦운영: 81875","extend":"","reply":"","team":"","owner":"","memo":""},{"id":"r12","urgent":false,"cat":"","sub":"온라인 전용 요금제, 너겟","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"✦STG: 2492\n✦운영: 82173","extend":"","reply":"","team":"","owner":"","memo":""}]},{"id":"s3","name":"빌보드 배너","note":"* 변경 내용 및 연장 여부 확인 필요. 별도 수정 사항 없으시면 Y 처리만 부탁드립니다.","rows":[{"id":"r13","urgent":false,"cat":"","sub":"iPhone Duo 애플브랜드관","checks":[{"label":"운영 기간","at":"2026-11-30T23:59"}],"area":"","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r14","urgent":false,"cat":"","sub":"Galaxy Z Foldable 8 최대 혜택","checks":[{"label":"운영 기간","at":"2026-10-31T23:59"}],"area":"","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r15","urgent":false,"cat":"","sub":"(S26기획전)갤럭시 심플하게 더 잘사는 방법!","checks":[{"label":"운영 기간","at":"2026-10-31T23:59"}],"area":"","extend":"","reply":"","team":"디지털커머스팀","owner":"박상인","memo":""},{"id":"r16","urgent":false,"cat":"","sub":"iPhone 18 프로 최대 혜택 앞으로","checks":[{"label":"운영 기간","at":"2026-12-31T16:59"}],"area":"","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r17","urgent":false,"cat":"","sub":"10월 너겟 친구 추천","checks":[{"label":"운영 기간","at":"2026-12-31T16:59"}],"area":"","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""}]},{"id":"s4","name":"이벤트 배너","note":"* 변경 내용 및 연장 여부 확인 필요. 별도 수정 사항 없으시면 Y 처리만 부탁드립니다.","rows":[{"id":"r18","urgent":false,"cat":"","sub":"프리미엄 중고폰","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"","extend":"","reply":"","team":"디지털커머스팀","owner":"유영헌","memo":""}]},{"id":"s5","name":"단말목록 상단 배너","note":"* 변경 내용 및 연장 여부 확인 필요. 별도 수정 사항 없으시면 Y 처리만 부탁드립니다.","rows":[{"id":"r19","urgent":false,"cat":"","sub":"iPhone Duo 애플브랜드관","checks":[{"label":"운영 기간","at":"2026-11-30T23:59"}],"area":"- 노출 영역: 휴대폰/ 태블릿/ 워치","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r20","urgent":false,"cat":"","sub":"Galaxy Z Foldable 8 최대 혜택","checks":[{"label":"운영 기간","at":"2026-10-31T23:59"}],"area":"- 노출 영역: 휴대폰/ 태블릿/ 워치","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r21","urgent":false,"cat":"","sub":"S26 프로모션_갤럭시 심플하게 더 잘사는 방법!","checks":[{"label":"운영 기간","at":"2026-10-31T23:59"}],"area":"- 노출 영역: 휴대폰/ 태블릿/ 워치","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r22","urgent":false,"cat":"","sub":"iPhone 18 프로 최대 혜택 앞으로","checks":[{"label":"운영 기간","at":"2026-12-31T16:59"}],"area":"- 노출 영역: 휴대폰/ 태블릿/ 워치","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r23","urgent":false,"cat":"","sub":"10월 너겟 친구 추천","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"- 노출 영역: 휴대폰/ 태블릿/ 워치","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r24","urgent":false,"cat":"","sub":"휴대폰 지원금 안내","checks":[{"label":"운영 기간","at":"2026-12-31T16:59"}],"area":"- 노출 영역: 태블릿/ 워치","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을,복다솜,박상인","memo":""},{"id":"r25","urgent":false,"cat":"","sub":"신분증 인증/안면 인증 추가 안내","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"- 노출 영역: 휴대폰","extend":"","reply":"","team":"디지털채널혁신팀","owner":"손범열","memo":""},{"id":"r26","urgent":false,"cat":"","sub":"iPad Pro M5 시리즈","checks":[{"label":"운영 기간","at":"2026-12-31T16:59"}],"area":"- 노출 영역: 태블릿","extend":"","reply":"","team":"디지털커머스팀","owner":"최종원","memo":""}]},{"id":"s6","name":"팝업","note":"* 변경 내용 및 연장 여부 확인 필요. 별도 수정 사항 없으시면 Y 처리만 부탁드립니다.","rows":[{"id":"r27","urgent":false,"cat":"","sub":"iPhone Duo 512GB 소진 안내","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"- iPhone Duo 512GB","extend":"","reply":"","team":"","owner":"","memo":""},{"id":"r28","urgent":false,"cat":"","sub":"배송 일주일 이상 지연 안내","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"- iPhone Duo 256GB\n-  iPhone Duo 1TB\n-  iPhone Duo 2TB","extend":"","reply":"","team":"","owner":"","memo":""}]},{"id":"s7","name":"USP 상단 제조사 프로모션","note":"* 변경 내용 및 연장 여부 확인 필요. 별도 수정 사항 없으시면 Y 처리만 부탁드립니다.\n* 연장/종료 티켓에서는 전시 세팅만 관리하며 프로모션 수정 건은 각각의 티켓으로 생성 부탁 드립니다.","rows":[{"id":"r29","urgent":false,"cat":"","sub":"갤럭시 Z 폴더블8","checks":[{"label":"[갤럭시 어텀 페스타] · 스마트태그3 & 케이스 30% 할인 쿠폰  증정 · 구매·개통","at":"2026-10-31T23:59"},{"label":"[갤럭시 어텀 페스타] · 스마트태그3 & 케이스 30% 할인 쿠폰  증정 · 신청","at":"2026-11-30T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 리뷰 작성 및 응모","at":"2026-11-08T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 당첨자 발표","at":"2026-11-18T23:59"},{"label":"[중고폰 최대 10만원 추가보상 혜택] · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[중고폰 최대 10만원 추가보상 혜택] · 추가보상 신청 및 중고기기 반납","at":"2026-10-31T23:59"},{"label":"[초기 구매 혜택] · 단말구매·개통","at":"2026-09-30T23:59"},{"label":"[초기 구매 혜택] · 쿠폰사용","at":"2028-10-31T23:59"},{"label":"[콘텐츠 구독 혜택] · 혜택1) 구글 AI 프로 6개월 구독권 · 단말 구매·개통 및 사용 등록","at":"2027-08-01T23:59"},{"label":"[콘텐츠 구독 혜택] · 혜택2) 윌라 3개월 구독권 · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[콘텐츠 구독 혜택] · 혜택2) 윌라 3개월 구독권 · 쿠폰사용","at":"2026-11-30T23:59"},{"label":"[보호필름 무료 부착 서비스] · 단말구매·개통","at":"2027-07-31T23:59"},{"label":"[보호필름 무료 부착 서비스] · 쿠폰사용","at":"2028-07-31T23:59"},{"label":"[갤럭시 스토어 특별 혜택] · 테마 다운로드","at":"2026-10-31T23:59"}],"area":"- Z Fold8 256GB\n- Z Fold8 512GB\n- Z Fold8 1TB\n- Z Fold8 Ultra 256GB\n- Z Fold8 Ultra 512GB\n- Z Fold8 Ultra 1TB\n- 갤럭시 Z Flip8 256GB\n- 갤럭시 Z Flip8 512GB","extend":"","reply":"","team":"디지털커머스팀","owner":"최종원","memo":""},{"id":"r30","urgent":false,"cat":"","sub":"갤럭시 S26 FE","checks":[{"label":"[갤럭시 어텀 페스타] · 스마트태그3 & 케이스 30% 할인 쿠폰  증정 · 구매·개통","at":"2026-10-31T23:59"},{"label":"[갤럭시 어텀 페스타] · 스마트태그3 & 케이스 30% 할인 쿠폰  증정 · 신청","at":"2026-11-30T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 리뷰 작성 및 응모","at":"2026-11-08T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 당첨자 발표","at":"2026-11-18T23:59"},{"label":"[중고폰 최대 10만원 추가보상 혜택] · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[중고폰 최대 10만원 추가보상 혜택] · 추가보상 신청 및 중고기기 반납","at":"2026-10-31T23:59"},{"label":"[케이스&액세서리 혜택] · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[케이스&액세서리 혜택] · 쿠폰사용","at":"2026-11-30T23:59"},{"label":"[콘텐츠 구독 혜택] · 혜택1) 구글 AI 프로 6개월 구독권 · 단말 구매·개통 및 사용 등록","at":"2027-08-01T23:59"},{"label":"[콘텐츠 구독 혜택] · 혜택2) 윌라 2개월 구독권 · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[콘텐츠 구독 혜택] · 혜택2) 윌라 2개월 구독권 · 사용등록","at":"2026-12-31T23:59"}],"area":"- 갤럭시 S26 FE","extend":"","reply":"","team":"디지털커머스팀","owner":"최종원","memo":""},{"id":"r31","urgent":false,"cat":"","sub":"S26 시리즈","checks":[{"label":"[갤럭시 어텀 페스타] · 스마트태그3 & 케이스 30% 할인 쿠폰  증정 · 구매·개통","at":"2026-10-31T23:59"},{"label":"[갤럭시 어텀 페스타] · 스마트태그3 & 케이스 30% 할인 쿠폰  증정 · 신청","at":"2026-11-30T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 리뷰 작성 및 응모","at":"2026-11-08T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 당첨자 발표","at":"2026-11-18T23:59"},{"label":"[중고폰 최대 10만원 추가보상 혜택] · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[중고폰 최대 10만원 추가보상 혜택] · 추가보상 신청 및 중고기기 반납","at":"2026-10-31T23:59"}],"area":"-S26+ 256GB\n- S26+ 512GB\n- S26 256GB\n- S26 512GB\n- S26 U 256GB\n- S26 U 512GB\n- S26 U 1TB","extend":"","reply":"","team":"디지털커머스팀","owner":"최종원","memo":""},{"id":"r32","urgent":false,"cat":"","sub":"갤럭시 A37 5G","checks":[{"label":"[구매 혜택] · 윌라 2개월 구독권 · 단말구매","at":"2026-09-30T23:59"},{"label":"[구매 혜택] · 윌라 2개월 구독권 · 사용등록","at":"2026-10-31T23:59"}],"area":"https://www.lguplus.com/mobile/device/samsung/galaxy-a37/SM-A376N","extend":"","reply":"","team":"디지털커머스팀","owner":"최종원","memo":""},{"id":"r33","urgent":false,"cat":"","sub":"키즈폰 무너에디션2","checks":[{"label":"[무너폰2의 스페셜 혜택] · 이벤트1) 교보라플 키즈 케어보험 1년 무료 보장 · 기간","at":"2026-12-31T23:59"},{"label":"[무너폰2의 스페셜 혜택] · 이벤트2) 하나은행 아이부자 7천원 용돈 · 기간","at":"2026-12-31T23:59"}],"area":"https://www.lguplus.com/mobile/device/samsung/uplus-kidsphone-mooner-2/SM-A175N-M2","extend":"","reply":"","team":"디지털커머스팀","owner":"최종원","memo":""},{"id":"r34","urgent":false,"cat":"","sub":"갤럭시 워치 Ultra2","checks":[{"label":"[갤럭시 워치 울트라2 ｜워치9 구매혜택] · 론칭 구매 혜택1) 워치 밴드 할인 쿠폰 증정 · 구매 기간","at":"2026-08-31T23:59"},{"label":"[갤럭시 워치 울트라2 ｜워치9 구매혜택] · 론칭 구매 혜택1) 워치 밴드 할인 쿠폰 증정 · 쿠폰 신청 및 사용 기간","at":"2026-09-30T23:59"},{"label":"[갤럭시 워치 울트라2 ｜워치9 구매혜택] · 론칭 구매 혜택2) 타임플릭 워치페이스 6개월 이용권 증정 · 쿠폰 다운로드 기간","at":"2026-09-30T23:59"},{"label":"[갤럭시 워치 울트라2 ｜워치9 구매혜택] · 론칭 구매 혜택2) 타임플릭 워치페이스 6개월 이용권 증정 · 쿠폰 등록 기간","at":"2026-12-31T23:59"},{"label":"[갤럭시 워치 울트라2 ｜워치9 구매혜택] · 구매자 혜택 리뷰) 워꾸 챌린지 · 챌린지 인증 기간","at":"2026-09-14T23:59"},{"label":"[갤럭시 워치 울트라2 ｜워치9 구매혜택] · 구매자 혜택 리뷰) 워꾸 챌린지 · 혜택 당첨 발표일","at":"2026-09-21T23:59"}],"area":"- 갤럭시 워치 Ultra2\n- 갤럭시 워치9 44mm\n- 갤럭시 워치9 40mm","extend":"","reply":"","team":"디지털커머스팀","owner":"최종원","memo":""},{"id":"r35","urgent":false,"cat":"","sub":"갤럭시 탭 S12 Ultra","checks":[{"label":"[런칭 스페셜 혜택] · 혜택2) · 기간","at":"2026-08-01T23:59"},{"label":"[런칭 스페셜 혜택] · 혜택3) · 기간","at":"2026-10-31T23:59"},{"label":"[런칭 스페셜 혜택] · 혜택3) · 등록","at":"2026-11-08T23:59"},{"label":"[정품 액세서리 할인 혜택] · 구매","at":"2026-10-31T23:59"},{"label":"[정품 액세서리 할인 혜택] · 신청","at":"2026-11-08T23:59"}],"area":"- 갤럭시 탭 S12 Ultra\n- 갤럭시 탭 S12+","extend":"","reply":"","team":"디지털커머스팀","owner":"최종원","memo":""}]}]}</script>
+<script>
+(function(){
+  "use strict";
+
+  var APP_VERSION = "0.2";
+
+  // ---- Supabase 설정 -----------------------------------------------------
+  // 이 도구 전용 Supabase 프로젝트(event-extension-check, 서울 리전).
+  // publishable key는 브라우저 노출을 전제로 한 값이며 접근 제어는 RLS(supabase/setup.sql)가 맡는다.
+  // URL을 "YOUR_SUPABASE_PROJECT_URL"로 바꾸면 공유 없이 이 브라우저에만 저장하는 로컬 모드로 동작한다.
+  var SUPABASE_URL = "https://ppzaicivdkvuiraursvi.supabase.co";
+  var SUPABASE_ANON_KEY = "sb_publishable_5D_GcAx0M0GKvIq0fBpnUg_KA0u2My2";
+  var REMOTE = SUPABASE_URL.indexOf("YOUR_SUPABASE") !== 0;
+
+  var T_SEC = "eec_sections", T_ROW = "eec_rows";
+  var SEC_COLS = ["sort_order", "name", "note"];
+  var ROW_COLS = ["sort_order", "urgent", "cat", "sub", "checks", "area", "extend", "reply", "team", "owner", "memo"];
+  var STORAGE_KEY = "event-extension-check:v1";
+  var COLS = 12;
+
+  var SEED = JSON.parse(document.getElementById("seedData").textContent);
+  var state = { title: SEED.title, notices: SEED.notices, sections: [] };
+  var onlyUrgent = false;
+  var loaded = false;
+
+  var sheet = document.getElementById("sheet");
+
+  // ---------- helpers ----------
+  function clone(o){ return JSON.parse(JSON.stringify(o)); }
+  function same(a, b){ return JSON.stringify(a) === JSON.stringify(b); }
+  function uid(p){ return p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function esc(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+    });
+  }
+  function pad(n){ return (n < 10 ? "0" : "") + n; }
+  function fmtTime(d){ return pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds()); }
+  function icon(id){ return '<svg class="icon" aria-hidden="true"><use href="#i-' + id + '"/></svg>'; }
+  function bySortOrder(a, b){ return (a.sort_order - b.sort_order) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0); }
+  function nextOrder(arr){ return arr.reduce(function(m, x){ return Math.max(m, x.sort_order); }, -1) + 1; }
+
+  function findSection(sid){ return state.sections.find(function(s){ return s.id === sid; }); }
+  function findRow(sec, rid){ return sec.rows.find(function(r){ return r.id === rid; }); }
+  function locateRow(rid){
+    for(var i = 0; i < state.sections.length; i++){
+      var r = findRow(state.sections[i], rid);
+      if(r){ return { sec: state.sections[i], row: r }; }
+    }
+    return null;
+  }
+  function blankRow(order){
+    return { id: uid("r"), sort_order: order || 0, urgent:false, cat:"", sub:"", checks:[{ label:"", at:"" }],
+             area:"", extend:"", reply:"", team:"", owner:"", memo:"" };
+  }
+
+  // Fill in any missing fields and order everything by sort_order — used for seed, local save and imports.
+  function normalize(sections){
+    return (sections || []).map(function(s, i){
+      var sec = { id: s.id || uid("s"), sort_order: s.sort_order != null ? s.sort_order : i, name: s.name || "", note: s.note || "" };
+      sec.rows = (s.rows || []).map(function(r, j){
+        var row = blankRow(j);
+        ROW_COLS.forEach(function(k){ if(r[k] != null){ row[k] = r[k]; } });
+        row.id = r.id || row.id;
+        if(r.sort_order == null){ row.sort_order = j; }
+        return row;
+      }).sort(bySortOrder);
+      return sec;
+    }).sort(bySortOrder);
+  }
+
+  // D-day relative to calendar days, so "~10/31 23:59" reads D-day on the 31st itself.
+  function dday(at){
+    if(!at){ return { text:"", tone:"" }; }
+    var end = new Date(at);
+    if(isNaN(end)){ return { text:"", tone:"" }; }
+    var now = new Date();
+    if(end < now){ return { text:"종료", tone:"past" }; }
+    var a = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var b = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+    var diff = Math.round((b - a) / 86400000);
+    if(diff === 0){ return { text:"D-day", tone:"today" }; }
+    return { text:"D-" + diff, tone: diff <= 7 ? "soon" : "" };
+  }
+
+  // =====================================================================
+  // Storage. Both stores expose the same calls; the UI reports *what* changed
+  // (row + field names) and the store decides how to save it.
+  // =====================================================================
+
+  // ---------- local: whole state in this browser's localStorage ----------
+  var localTimer = null;
+  var localStore = {
+    load: function(){
+      var saved = null;
+      try{ saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); }catch(e){}
+      state.sections = normalize(saved && Array.isArray(saved.sections) ? saved.sections : clone(SEED.sections));
+      return Promise.resolve();
+    },
+    save: function(){
+      clearTimeout(localTimer);
+      setStatus("busy", "저장 중…");
+      localTimer = setTimeout(function(){
+        try{
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({ sections: state.sections, updatedAt: new Date().toISOString() }));
+          setStatus("local", "이 브라우저에만 저장됨 · " + fmtTime(new Date()));
+        }catch(e){
+          setStatus("error", "저장 실패 — 내보내기로 백업하세요");
+        }
+      }, 300);
+    },
+    pending: function(){ return false; }
+  };
+  ["rowChanged", "secChanged", "rowInserted", "rowDeleted", "secInserted", "secDeleted"].forEach(function(k){
+    localStore[k] = function(){ localStore.save(); return Promise.resolve(true); };
+  });
+  localStore.replaceAll = function(){ localStore.save(); return Promise.resolve(); };
+
+  // ---------- remote: one Supabase row per section / item ----------
+  // An edit marks (row, field) dirty; a debounced flush sends UPDATE ... SET <only those fields>
+  // WHERE id = <that row>. Two people editing different rows, or different cells of one row,
+  // never overwrite each other. For the same cell, the later save wins.
+  var sb = null, channel = null;
+  var dirty = { row:{}, sec:{} };      // fields edited here and not yet sent
+  var inflight = {};                    // "kind:id:field" -> count of sends awaiting ack
+  var skipped = {};                     // "kind:id" -> a remote value was held back while we were saving
+  var inserting = {};                   // ids whose INSERT hasn't been acknowledged yet
+  var flushTimer = null, saving = 0, lastSaved = null, saveError = false;
+  var online = false, peers = 1, everSubscribed = false;
+  var CLIENT_ID = uid("c");
+
+  function tableFor(kind){ return kind === "row" ? T_ROW : T_SEC; }
+  function colsFor(kind){ return kind === "row" ? ROW_COLS : SEC_COLS; }
+  function targetFor(kind, id){
+    if(kind === "sec"){ return findSection(id); }
+    var hit = locateRow(id);
+    return hit && hit.row;
+  }
+  function toDbRow(row, sectionId){
+    var rec = { id: row.id, section_id: sectionId };
+    ROW_COLS.forEach(function(k){ rec[k] = row[k]; });
+    return rec;
+  }
+  function toDbSec(sec){ return { id: sec.id, sort_order: sec.sort_order, name: sec.name, note: sec.note }; }
+
+  function isProtected(kind, id, f){
+    return !!((dirty[kind][id] && dirty[kind][id][f]) || inflight[kind + ":" + id + ":" + f]);
+  }
+
+  function markDirty(kind, id, fields){
+    var d = dirty[kind][id] || (dirty[kind][id] = {});
+    fields.forEach(function(f){ d[f] = true; });
+    scheduleFlush();
+  }
+  function scheduleFlush(delay){
+    clearTimeout(flushTimer);
+    flushTimer = setTimeout(flush, delay == null ? 400 : delay);
+    updateRemoteStatus();
+  }
+
+  function flush(){
+    clearTimeout(flushTimer);
+    var waiting = false;
+    ["row", "sec"].forEach(function(kind){
+      Object.keys(dirty[kind]).forEach(function(id){
+        if(inserting[id]){ waiting = true; return; }   // UPDATE before INSERT lands would hit nothing
+        var target = targetFor(kind, id);
+        var fields = Object.keys(dirty[kind][id]);
+        delete dirty[kind][id];
+        if(!target){ return; }
+        var patch = {};
+        fields.forEach(function(f){
+          patch[f] = clone(target[f]);
+          inflight[kind + ":" + id + ":" + f] = (inflight[kind + ":" + id + ":" + f] || 0) + 1;
+        });
+        saving++;
+        sb.from(tableFor(kind)).update(patch).eq("id", id).then(function(res){
+          saving--;
+          fields.forEach(function(f){
+            var k = kind + ":" + id + ":" + f;
+            if(--inflight[k] <= 0){ delete inflight[k]; }
+          });
+          if(res.error){
+            saveError = true;
+            markDirty(kind, id, fields);
+            scheduleFlush(3000);
+          }else{
+            saveError = false;
+            lastSaved = new Date();
+            if(skipped[kind + ":" + id]){ delete skipped[kind + ":" + id]; refetch(kind, id); }
+          }
+          updateRemoteStatus();
+        });
+      });
+    });
+    if(waiting){ scheduleFlush(300); }
+    updateRemoteStatus();
+  }
+
+  function track(promise){
+    saving++;
+    updateRemoteStatus();
+    return promise.then(function(res){
+      saving--;
+      if(res.error){ saveError = true; } else { saveError = false; lastSaved = new Date(); }
+      updateRemoteStatus();
+      return !res.error;
+    });
+  }
+
+  var remoteStore = {
+    load: function(){
+      return Promise.all([
+        sb.from(T_SEC).select("*"),
+        sb.from(T_ROW).select("*")
+      ]).then(function(r){
+        if(r[0].error){ throw r[0].error; }
+        if(r[1].error){ throw r[1].error; }
+        var prev = {};
+        state.sections.forEach(function(s){ prev[s.id] = s; s.rows.forEach(function(row){ prev[row.id] = row; }); });
+        var secs = r[0].data.map(function(rec){
+          var sec = { id: rec.id, rows: [] };
+          SEC_COLS.forEach(function(f){ sec[f] = keepLocal("sec", rec.id, f, prev, rec); });
+          return sec;
+        });
+        var secIndex = {};
+        secs.forEach(function(s){ secIndex[s.id] = s; });
+        r[1].data.forEach(function(rec){
+          var sec = secIndex[rec.section_id];
+          if(!sec){ return; }
+          var row = { id: rec.id };
+          ROW_COLS.forEach(function(f){ row[f] = keepLocal("row", rec.id, f, prev, rec); });
+          sec.rows.push(row);
+        });
+        // Rows added here whose INSERT is still in flight aren't in the fetch yet — keep them.
+        state.sections.forEach(function(s){
+          s.rows.forEach(function(row){
+            if(inserting[row.id] && secIndex[s.id] && !findRow(secIndex[s.id], row.id)){ secIndex[s.id].rows.push(row); }
+          });
+          if(inserting[s.id] && !secIndex[s.id]){ secs.push(s); }
+        });
+        secs.forEach(function(s){ s.rows.sort(bySortOrder); });
+        state.sections = secs.sort(bySortOrder);
+      });
+    },
+    rowChanged: function(row, fields){ markDirty("row", row.id, fields); },
+    secChanged: function(sec, fields){ markDirty("sec", sec.id, fields); },
+    rowInserted: function(row, sec){
+      inserting[row.id] = true;
+      return track(sb.from(T_ROW).insert(toDbRow(row, sec.id))).then(function(ok){
+        delete inserting[row.id];
+        if(!ok){ dropLocalRow(row.id); toast("항목을 추가하지 못했습니다. 연결을 확인해 주세요."); }
+        return ok;
+      });
+    },
+    rowDeleted: function(row){
+      delete dirty.row[row.id];
+      return track(sb.from(T_ROW).delete().eq("id", row.id));
+    },
+    secInserted: function(sec){
+      inserting[sec.id] = true;
+      sec.rows.forEach(function(r){ inserting[r.id] = true; });
+      return track(sb.from(T_SEC).insert(toDbSec(sec))).then(function(ok){
+        if(!ok || !sec.rows.length){ return ok; }
+        return track(sb.from(T_ROW).insert(sec.rows.map(function(r){ return toDbRow(r, sec.id); })));
+      }).then(function(ok){
+        delete inserting[sec.id];
+        sec.rows.forEach(function(r){ delete inserting[r.id]; });
+        if(!ok){ toast("구분을 추가하지 못했습니다. 연결을 확인해 주세요."); reload(); }
+        return ok;
+      });
+    },
+    secDeleted: function(sec){
+      delete dirty.sec[sec.id];
+      sec.rows.forEach(function(r){ delete dirty.row[r.id]; });
+      return track(sb.from(T_SEC).delete().eq("id", sec.id));   // rows go with it (on delete cascade)
+    },
+    replaceAll: function(){
+      dirty = { row:{}, sec:{} };
+      return track(sb.from(T_ROW).delete().neq("id", "")).then(function(ok){
+        return ok && track(sb.from(T_SEC).delete().neq("id", ""));
+      }).then(function(ok){
+        if(!ok || !state.sections.length){ return ok; }
+        return track(sb.from(T_SEC).insert(state.sections.map(toDbSec))).then(function(ok2){
+          var rows = [];
+          state.sections.forEach(function(s){ s.rows.forEach(function(r){ rows.push(toDbRow(r, s.id)); }); });
+          return ok2 && (!rows.length || track(sb.from(T_ROW).insert(rows)));
+        });
+      }).then(function(ok){
+        if(!ok){ toast("가져오기 중 오류가 났습니다. 새로고침 후 다시 시도해 주세요."); }
+        reload();
+      });
+    },
+    pending: function(){
+      return saving > 0 || Object.keys(dirty.row).length > 0 || Object.keys(dirty.sec).length > 0;
+    }
+  };
+
+  function keepLocal(kind, id, f, prev, rec){
+    return isProtected(kind, id, f) && prev[id] ? prev[id][f] : rec[f];
+  }
+
+  function refetch(kind, id){
+    sb.from(tableFor(kind)).select("*").eq("id", id).maybeSingle().then(function(res){
+      if(!res.error && res.data){ applyRemote(kind, res.data); }
+    });
+  }
+
+  function dropLocalRow(id){
+    var hit = locateRow(id);
+    if(hit){ hit.sec.rows.splice(hit.sec.rows.indexOf(hit.row), 1); requestRender(); }
+  }
+
+  // ---------- realtime ----------
+  function applyRemote(kind, rec){
+    var target = targetFor(kind, rec.id);
+    if(kind === "row"){
+      var sec = findSection(rec.section_id);
+      if(!sec){ scheduleReload(); return; }          // section event not here yet — resync
+      if(!target){
+        var row = { id: rec.id };
+        ROW_COLS.forEach(function(f){ row[f] = rec[f]; });
+        sec.rows.push(row);
+        sec.rows.sort(bySortOrder);
+        requestRender();
+        return;
+      }
+    }else if(!target){
+      var s = { id: rec.id, rows: [] };
+      SEC_COLS.forEach(function(f){ s[f] = rec[f]; });
+      state.sections.push(s);
+      state.sections.sort(bySortOrder);
+      requestRender();
+      return;
+    }
+
+    var changed = [];
+    colsFor(kind).forEach(function(f){
+      if(same(target[f], rec[f])){ return; }
+      if(isProtected(kind, rec.id, f)){ skipped[kind + ":" + rec.id] = true; return; }
+      target[f] = clone(rec[f]);
+      changed.push(f);
+    });
+    if(!changed.length){ return; }
+
+    if(changed.indexOf("sort_order") !== -1 || (onlyUrgent && changed.indexOf("urgent") !== -1)){
+      if(kind === "row"){ locateRow(rec.id).sec.rows.sort(bySortOrder); } else { state.sections.sort(bySortOrder); }
+      requestRender();
+    }else if(kind === "row"){
+      patchRow(rec.id);
+      renderSummary();
+    }else{
+      patchSection(rec.id);
+    }
+  }
+
+  function onRemote(kind){
+    return function(p){
+      if(!loaded){ return; }
+      if(p.eventType === "DELETE"){
+        var id = p.old && p.old.id;
+        if(!id){ scheduleReload(); return; }
+        if(kind === "row"){
+          dropLocalRow(id);
+        }else{
+          var s = findSection(id);
+          if(s){ state.sections.splice(state.sections.indexOf(s), 1); requestRender(); }
+        }
+        renderSummary();
+        return;
+      }
+      applyRemote(kind, p.new);
+    };
+  }
+
+  function subscribe(){
+    channel = sb.channel("eec-sync", { config: { presence: { key: CLIENT_ID } } })
+      .on("postgres_changes", { event: "*", schema: "public", table: T_SEC }, onRemote("sec"))
+      .on("postgres_changes", { event: "*", schema: "public", table: T_ROW }, onRemote("row"))
+      .on("presence", { event: "sync" }, function(){
+        peers = Math.max(1, Object.keys(channel.presenceState()).length);
+        updateRemoteStatus();
+      })
+      .subscribe(function(status){
+        if(status === "SUBSCRIBED"){
+          online = true;
+          channel.track({ since: Date.now() });
+          // Anything saved between the first load and now (or while disconnected) arrived without events.
+          if(everSubscribed || loaded){ reload(); }
+          everSubscribed = true;
+        }else if(status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED"){
+          online = false;
+        }
+        updateRemoteStatus();
+      });
+  }
+
+  var reloadTimer = null;
+  function scheduleReload(){ clearTimeout(reloadTimer); reloadTimer = setTimeout(reload, 300); }
+  function reload(){
+    return remoteStore.load().then(function(){ loaded = true; requestRender(); }).catch(function(err){ showLoadError(err); });
+  }
+
+  // Background tabs can lose the socket quietly; resync on return.
+  var hiddenAt = 0;
+  document.addEventListener("visibilitychange", function(){
+    if(!REMOTE){ return; }
+    if(document.hidden){ hiddenAt = Date.now(); }
+    else if(hiddenAt && Date.now() - hiddenAt > 30000){ reload(); }
+  });
+
+  window.addEventListener("beforeunload", function(e){
+    if(REMOTE && remoteStore.pending()){ flush(); e.preventDefault(); e.returnValue = ""; }
+  });
+
+  // ---------- status line ----------
+  function setStatus(tone, text){
+    var el = document.getElementById("saveStatus");
+    el.dataset.state = tone;
+    el.textContent = text;
+  }
+  function updateRemoteStatus(){
+    if(!REMOTE || !loaded){ return; }
+    var conn = online ? "실시간 연결 · 접속 " + peers + "명" : "실시간 연결 끊김 — 재연결 중";
+    var save;
+    if(saveError){ save = "저장 실패 — 재시도 중"; }
+    else if(remoteStore.pending()){ save = "저장 중…"; }
+    else if(lastSaved){ save = "저장됨 " + fmtTime(lastSaved); }
+    else{ save = ""; }
+    setStatus(saveError ? "error" : !online ? "offline" : remoteStore.pending() ? "busy" : "online", conn + (save ? " · " + save : ""));
+  }
+
+  var store = REMOTE ? remoteStore : localStore;
+
+  // =====================================================================
+  // Render
+  // =====================================================================
+  function renderHeader(){
+    document.getElementById("docTitle").textContent = state.title;
+    document.getElementById("notices").innerHTML = (state.notices || []).map(function(n){
+      return "<li>" + esc(n) + "</li>";
+    }).join("");
+    document.getElementById("appVersion").textContent = APP_VERSION;
+  }
+
+  function renderSummary(){
+    var total = 0, urgent = 0, y = 0, n = 0;
+    state.sections.forEach(function(s){
+      s.rows.forEach(function(r){
+        total++;
+        if(r.urgent){ urgent++; }
+        if(r.extend === "Y"){ y++; } else if(r.extend === "N"){ n++; }
+      });
+    });
+    var items = [
+      ["", "전체", total], ["urgent", "마감 임박", urgent],
+      ["y", "연장 Y", y], ["n", "연장 N", n], ["", "미회신", total - y - n]
+    ];
+    document.getElementById("summary").innerHTML = items.map(function(it){
+      return '<span class="summary__item"' + (it[0] ? ' data-tone="' + it[0] + '"' : "") + ">" + it[1] + "<b>" + it[2] + "</b></span>";
+    }).join("");
+  }
+
+  function checkHTML(c, i){
+    var d = dday(c.at);
+    return '<div class="check" data-check="' + i + '">' +
+      '<textarea class="cell-input cell-input--sm" rows="1" data-cfield="label" placeholder="대분류 직접 입력" aria-label="확인 사항 대분류">' + esc(c.label) + "</textarea>" +
+      '<div class="check__when">' +
+        '<input type="datetime-local" class="cell-input cell-date" data-cfield="at" value="' + esc(c.at) + '" aria-label="확인 사항 일시">' +
+        '<span class="dday"' + (d.tone ? ' data-tone="' + d.tone + '"' : "") + ">" + d.text + "</span>" +
+        '<button type="button" class="btn btn--icon btn--icon--xs is-danger" data-action="remove-check" aria-label="확인 사항 삭제">' + icon("x") + "</button>" +
+      "</div>" +
+    "</div>";
+  }
+
+  function rowHTML(sec, r, idx){
+    var name = "ext-" + r.id;
+    return '<tr class="item' + (r.urgent ? " is-urgent" : "") + '" data-row="' + r.id + '">' +
+      '<td class="c-center"><label class="urgent-box" title="마감 임박 표시"><input type="checkbox" data-field="urgent"' + (r.urgent ? " checked" : "") + '><span class="visually-hidden">마감 임박</span></label></td>' +
+      '<td><textarea class="cell-input" rows="1" data-field="cat" placeholder="대분류" aria-label="이벤트 및 단말 대분류">' + esc(r.cat) + "</textarea></td>" +
+      '<td><textarea class="cell-input cell-input--strong" rows="1" data-field="sub" placeholder="소분류" aria-label="이벤트 및 단말 소분류">' + esc(r.sub) + "</textarea></td>" +
+      '<td colspan="2"><div class="checks">' + r.checks.map(checkHTML).join("") +
+        '<button type="button" class="check-add" data-action="add-check">' + icon("plus") + "확인 사항 추가</button></div></td>" +
+      '<td><textarea class="cell-input cell-input--sm" rows="1" data-field="area" placeholder="적용 영역" aria-label="적용 영역">' + esc(r.area) + "</textarea></td>" +
+      '<td class="c-center"><div class="yn" role="radiogroup" aria-label="기간 연장">' +
+        '<label class="yn__opt yn__opt--y"><input type="radio" name="' + name + '" value="Y" data-field="extend"' + (r.extend === "Y" ? " checked" : "") + "><span>Y</span></label>" +
+        '<label class="yn__opt yn__opt--n"><input type="radio" name="' + name + '" value="N" data-field="extend"' + (r.extend === "N" ? " checked" : "") + "><span>N</span></label>" +
+      "</div></td>" +
+      '<td><textarea class="cell-input" rows="1" data-field="reply" placeholder="연장/종료/추가 내용" aria-label="추가 내용 기재">' + esc(r.reply) + "</textarea></td>" +
+      '<td><textarea class="cell-input" rows="1" data-field="team" placeholder="팀" aria-label="요청자 팀">' + esc(r.team) + "</textarea></td>" +
+      '<td><textarea class="cell-input" rows="1" data-field="owner" placeholder="담당자" aria-label="요청자 담당자">' + esc(r.owner) + "</textarea></td>" +
+      '<td><textarea class="cell-input cell-input--sm" rows="1" data-field="memo" placeholder="비고" aria-label="비고">' + esc(r.memo) + "</textarea></td>" +
+      '<td><div class="row-actions">' +
+        '<button type="button" class="btn btn--icon btn--icon--xs" data-action="row-up" aria-label="위로 이동"' + (idx === 0 ? " disabled" : "") + ">" + icon("up") + "</button>" +
+        '<button type="button" class="btn btn--icon btn--icon--xs" data-action="row-down" aria-label="아래로 이동"' + (idx === sec.rows.length - 1 ? " disabled" : "") + ">" + icon("down") + "</button>" +
+        '<button type="button" class="btn btn--icon btn--icon--xs is-danger" data-action="row-delete" aria-label="행 삭제">' + icon("trash") + "</button>" +
+      "</div></td>" +
+    "</tr>";
+  }
+
+  function sectionHTML(sec, si){
+    var rows = onlyUrgent ? sec.rows.filter(function(r){ return r.urgent; }) : sec.rows;
+    if(onlyUrgent && rows.length === 0){ return ""; }
+    var body = rows.length
+      ? rows.map(function(r){ return rowHTML(sec, r, sec.rows.indexOf(r)); }).join("")
+      : '<tr class="empty-row"><td colspan="' + COLS + '">항목이 없습니다. 오른쪽 위 ‘항목 추가’로 행을 만드세요.</td></tr>';
+    return '<tbody class="section" data-sec="' + sec.id + '">' +
+      '<tr class="section-head"><th colspan="' + COLS + '" scope="rowgroup"><div class="section-head__inner">' +
+        '<input class="section-name" data-sfield="name" value="' + esc(sec.name) + '" aria-label="구분 이름" placeholder="구분 이름">' +
+        '<span class="section-count">' + sec.rows.length + "건</span>" +
+        '<textarea class="section-note" rows="1" data-sfield="note" aria-label="구분 안내 문구" placeholder="안내 문구">' + esc(sec.note) + "</textarea>" +
+        '<div class="section-actions">' +
+          '<button type="button" class="btn btn--ghost btn--sm" data-action="row-add">' + icon("plus") + "항목 추가</button>" +
+          '<button type="button" class="btn btn--icon" data-action="sec-up" aria-label="구분 위로 이동"' + (si === 0 ? " disabled" : "") + ">" + icon("up") + "</button>" +
+          '<button type="button" class="btn btn--icon" data-action="sec-down" aria-label="구분 아래로 이동"' + (si === state.sections.length - 1 ? " disabled" : "") + ">" + icon("down") + "</button>" +
+          '<button type="button" class="btn btn--icon is-danger" data-action="sec-delete" aria-label="구분 삭제">' + icon("trash") + "</button>" +
+        "</div>" +
+      "</div></th></tr>" + body + "</tbody>";
+  }
+
+  function render(){
+    Array.prototype.forEach.call(sheet.querySelectorAll("tbody"), function(tb){ tb.remove(); });
+    var html = state.sections.map(sectionHTML).join("");
+    if(!html){
+      html = '<tbody><tr class="empty-row"><td colspan="' + COLS + '">' +
+        (onlyUrgent ? "마감 임박으로 표시된 항목이 없습니다." : "구분이 없습니다. ‘구분 추가’로 시작하세요.") + "</td></tr></tbody>";
+    }
+    sheet.insertAdjacentHTML("beforeend", html);
+    autosizeAll();
+    renderSummary();
+  }
+
+  // ---------- remote-driven re-render that doesn't disturb whoever is typing ----------
+  // Korean input composes characters through the IME; replacing the element mid-composition
+  // drops the syllable, so full re-renders wait for compositionend.
+  var composing = false, renderQueued = false;
+  sheet.addEventListener("compositionstart", function(){ composing = true; });
+  sheet.addEventListener("compositionend", function(){
+    composing = false;
+    if(renderQueued){ renderQueued = false; renderKeepFocus(); }
+  });
+  function requestRender(){
+    if(composing){ renderQueued = true; return; }
+    renderKeepFocus();
+  }
+
+  function selectorFor(el){
+    var tb = el.closest("tbody.section"), tr = el.closest("tr.item"), ch = el.closest(".check");
+    var s = tb ? 'tbody[data-sec="' + tb.dataset.sec + '"] ' : "";
+    if(tr){ s += 'tr[data-row="' + tr.dataset.row + '"] '; }
+    if(ch){ s += '.check[data-check="' + ch.dataset.check + '"] '; }
+    if(el.dataset.field){ return s + '[data-field="' + el.dataset.field + '"]' + (el.type === "radio" ? '[value="' + el.value + '"]' : ""); }
+    if(el.dataset.cfield){ return s + '[data-cfield="' + el.dataset.cfield + '"]'; }
+    if(el.dataset.sfield){ return s + '[data-sfield="' + el.dataset.sfield + '"]'; }
+    if(el.dataset.action){ return s + '[data-action="' + el.dataset.action + '"]'; }
+    return null;
+  }
+  function renderKeepFocus(){
+    var a = document.activeElement, sel = null, s0 = null, s1 = null;
+    if(a && sheet.contains(a)){
+      sel = selectorFor(a);
+      try{ s0 = a.selectionStart; s1 = a.selectionEnd; }catch(e){}
+    }
+    var wrap = document.querySelector(".sheet-wrap"), st = wrap.scrollTop, sl = wrap.scrollLeft;
+    render();
+    wrap.scrollTop = st; wrap.scrollLeft = sl;
+    var el = sel && sheet.querySelector(sel);
+    if(el){
+      el.focus({ preventScroll: true });
+      try{ if(s0 != null){ el.setSelectionRange(s0, s1); } }catch(e){}
+    }
+  }
+
+  // Patch one row in place. A row someone is editing here keeps its focused cell untouched;
+  // if its 확인 사항 list changed shape, the row is rebuilt once focus leaves it.
+  function patchRow(id){
+    var hit = locateRow(id);
+    var tr = sheet.querySelector('tr[data-row="' + id + '"]');
+    if(!hit || !tr){ return; }
+    var row = hit.row, idx = hit.sec.rows.indexOf(row);
+    if(!tr.contains(document.activeElement)){
+      tr.insertAdjacentHTML("afterend", rowHTML(hit.sec, row, idx));
+      var fresh = tr.nextElementSibling;
+      tr.remove();
+      fresh.querySelectorAll("textarea").forEach(autosize);
+      return;
+    }
+    var active = document.activeElement;
+    tr.classList.toggle("is-urgent", !!row.urgent);
+    tr.querySelector('[data-field="urgent"]').checked = !!row.urgent;
+    tr.querySelectorAll('[data-field="extend"]').forEach(function(r){ r.checked = r.value === row.extend; });
+    // The focused cell is left alone; if it now disagrees with the saved value, refresh it on blur.
+    tr.querySelectorAll("textarea[data-field]").forEach(function(el){
+      if(el.value === row[el.dataset.field]){ return; }
+      if(el === active){ tr.dataset.stale = "1"; return; }
+      el.value = row[el.dataset.field]; autosize(el);
+    });
+    var checkEls = tr.querySelectorAll(".check");
+    if(checkEls.length !== row.checks.length){ tr.dataset.stale = "1"; return; }
+    checkEls.forEach(function(ch, i){
+      ch.querySelectorAll("[data-cfield]").forEach(function(el){
+        var v = row.checks[i][el.dataset.cfield] || "";
+        if(el.value === v){ return; }
+        if(el === active){ tr.dataset.stale = "1"; return; }
+        el.value = v; autosize(el);
+        if(el.dataset.cfield === "at"){ paintDday(el); }
+      });
+    });
+  }
+  function patchSection(id){
+    var sec = findSection(id);
+    var tb = sheet.querySelector('tbody[data-sec="' + id + '"]');
+    if(!sec || !tb){ return; }
+    tb.querySelectorAll("[data-sfield]").forEach(function(el){
+      if(el !== document.activeElement && el.value !== sec[el.dataset.sfield]){ el.value = sec[el.dataset.sfield]; autosize(el); }
+    });
+  }
+  sheet.addEventListener("focusout", function(e){
+    var tr = e.target.closest && e.target.closest("tr.item");
+    if(REMOTE){ scheduleFlush(0); }
+    if(!tr || !tr.dataset.stale || (e.relatedTarget && tr.contains(e.relatedTarget))){ return; }
+    delete tr.dataset.stale;
+    setTimeout(function(){ patchRow(tr.dataset.row); }, 0);
+  });
+
+  function paintDday(input){
+    var d = dday(input.value), chip = input.parentNode.querySelector(".dday");
+    chip.textContent = d.text;
+    if(d.tone){ chip.dataset.tone = d.tone; }else{ delete chip.dataset.tone; }
+  }
+
+  // field-sizing: content handles this in current Chromium; the JS fallback covers the rest.
+  var NATIVE_SIZING = window.CSS && CSS.supports && CSS.supports("field-sizing", "content");
+  function autosize(el){
+    if(NATIVE_SIZING || el.tagName !== "TEXTAREA"){ return; }
+    el.style.height = "auto";
+    el.style.height = el.scrollHeight + 2 + "px";
+  }
+  function autosizeAll(){ if(!NATIVE_SIZING){ sheet.querySelectorAll("textarea").forEach(autosize); } }
+
+  // =====================================================================
+  // Editing
+  // =====================================================================
+  function ctx(el){
+    var tb = el.closest("tbody.section");
+    var tr = el.closest("tr.item");
+    var sec = tb && findSection(tb.dataset.sec);
+    var row = sec && tr && findRow(sec, tr.dataset.row);
+    var ch = el.closest(".check");
+    return { sec: sec, row: row, tr: tr, checkIdx: ch ? Number(ch.dataset.check) : -1 };
+  }
+
+  sheet.addEventListener("input", function(e){
+    var el = e.target, c = ctx(el);
+    if(el.dataset.sfield && c.sec){
+      c.sec[el.dataset.sfield] = el.value;
+      store.secChanged(c.sec, [el.dataset.sfield]);
+    }else if(el.dataset.cfield && c.row){
+      c.row.checks[c.checkIdx][el.dataset.cfield] = el.value;
+      if(el.dataset.cfield === "at"){ paintDday(el); }
+      store.rowChanged(c.row, ["checks"]);
+    }else if(el.dataset.field && c.row && el.type !== "radio" && el.type !== "checkbox"){
+      c.row[el.dataset.field] = el.value;
+      store.rowChanged(c.row, [el.dataset.field]);
+    }else{
+      return;
+    }
+    autosize(el);
+  });
+
+  sheet.addEventListener("change", function(e){
+    var el = e.target, c = ctx(el);
+    if(!c.row){ return; }
+    if(el.dataset.field === "urgent"){
+      c.row.urgent = el.checked;
+      c.tr.classList.toggle("is-urgent", el.checked);
+      store.rowChanged(c.row, ["urgent"]);
+      renderSummary();
+      if(onlyUrgent && !el.checked){ render(); }
+    }else if(el.dataset.field === "extend"){
+      c.row.extend = el.value;
+      store.rowChanged(c.row, ["extend"]);
+      renderSummary();
+    }
+  });
+
+  // Swap with a neighbour and renumber sort_order so it stays dense; only items whose
+  // position actually changed are saved.
+  function move(arr, i, j, onChanged){
+    if(j < 0 || j >= arr.length){ return; }
+    var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    arr.forEach(function(x, k){
+      if(x.sort_order !== k){ x.sort_order = k; onChanged(x); }
+    });
+  }
+
+  sheet.addEventListener("click", function(e){
+    // Clicking the already-selected Y/N clears it back to 미회신 — radios can't be unset otherwise.
+    var radio = e.target.closest('input[type="radio"][data-field="extend"]');
+    if(radio){
+      var rc = ctx(radio);
+      if(rc.row && rc.row.extend === radio.value){
+        radio.checked = false;
+        rc.row.extend = "";
+        store.rowChanged(rc.row, ["extend"]);
+        renderSummary();
+      }
+      return;
+    }
+
+    var btn = e.target.closest("[data-action]");
+    if(!btn){ return; }
+    var c = ctx(btn), sec = c.sec, row = c.row;
+    var si = state.sections.indexOf(sec);
+    var ri = sec && row ? sec.rows.indexOf(row) : -1;
+    function rowMoved(x){ store.rowChanged(x, ["sort_order"]); }
+    function secMoved(x){ store.secChanged(x, ["sort_order"]); }
+
+    switch(btn.dataset.action){
+      case "add-check":
+        row.checks.push({ label:"", at:"" });
+        store.rowChanged(row, ["checks"]);
+        render();
+        focusIn('tr[data-row="' + row.id + '"] .check:last-of-type textarea');
+        break;
+      case "remove-check":
+        row.checks.splice(c.checkIdx, 1);
+        store.rowChanged(row, ["checks"]);
+        render();
+        break;
+      case "row-add":
+        if(onlyUrgent){ setOnlyUrgent(false); }
+        var nr = blankRow(nextOrder(sec.rows));
+        sec.rows.push(nr);
+        store.rowInserted(nr, sec);
+        render();
+        focusIn('tr[data-row="' + nr.id + '"] [data-field="cat"]');
+        break;
+      case "row-up": move(sec.rows, ri, ri - 1, rowMoved); render(); break;
+      case "row-down": move(sec.rows, ri, ri + 1, rowMoved); render(); break;
+      case "row-delete":
+        confirmDelete("이 항목을 삭제할까요?", "‘" + (row.sub || row.cat || "이름 없는 항목") + "’ 행이 삭제됩니다.").then(function(ok){
+          if(!ok){ return; }
+          var at = sec.rows.indexOf(row);
+          if(at === -1){ return; }
+          sec.rows.splice(at, 1);
+          store.rowDeleted(row);
+          render();
+          toast("항목을 삭제했습니다.", function(){
+            if(!findSection(sec.id)){ toast("구분이 삭제되어 되돌릴 수 없습니다."); return; }
+            sec.rows.splice(Math.min(at, sec.rows.length), 0, row);
+            store.rowInserted(row, sec);
+            render();
+          });
+        });
+        break;
+      case "sec-up": move(state.sections, si, si - 1, secMoved); render(); break;
+      case "sec-down": move(state.sections, si, si + 1, secMoved); render(); break;
+      case "sec-delete":
+        confirmDelete("구분을 삭제할까요?", "‘" + (sec.name || "이름 없는 구분") + "’과 그 안의 항목 " + sec.rows.length + "건이 함께 삭제됩니다.").then(function(ok){
+          if(!ok){ return; }
+          var at = state.sections.indexOf(sec);
+          if(at === -1){ return; }
+          state.sections.splice(at, 1);
+          store.secDeleted(sec);
+          render();
+          toast("구분을 삭제했습니다.", function(){
+            state.sections.splice(Math.min(at, state.sections.length), 0, sec);
+            store.secInserted(sec);
+            render();
+          });
+        });
+        break;
+    }
+  });
+
+  function focusIn(sel){ var el = sheet.querySelector(sel); if(el){ el.focus(); } }
+
+  function setOnlyUrgent(v){
+    onlyUrgent = v;
+    document.getElementById("onlyUrgent").checked = v;
+  }
+  document.getElementById("onlyUrgent").addEventListener("change", function(e){
+    setOnlyUrgent(e.target.checked);
+    render();
+  });
+
+  document.getElementById("addSectionBtn").addEventListener("click", function(){
+    if(onlyUrgent){ setOnlyUrgent(false); }
+    var s = { id: uid("s"), sort_order: nextOrder(state.sections), name:"", note:"", rows:[blankRow(0)] };
+    state.sections.push(s);
+    store.secInserted(s);
+    render();
+    var el = sheet.querySelector('tbody[data-sec="' + s.id + '"] .section-name');
+    if(el){ el.focus(); el.scrollIntoView({ block:"center" }); }
+  });
+
+  // ---------- export / import ----------
+  document.getElementById("exportBtn").addEventListener("click", function(){
+    var data = { title: state.title, notices: state.notices, sections: state.sections, exportedAt: new Date().toISOString() };
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type:"application/json" });
+    var a = document.createElement("a");
+    var d = new Date();
+    a.href = URL.createObjectURL(blob);
+    a.download = "event-extension-check_" + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + ".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+  });
+  document.getElementById("importBtn").addEventListener("click", function(){
+    document.getElementById("importFile").click();
+  });
+  document.getElementById("importFile").addEventListener("change", function(e){
+    var file = e.target.files[0];
+    e.target.value = "";
+    if(!file){ return; }
+    file.text().then(function(txt){
+      var next = JSON.parse(txt);
+      if(!next || !Array.isArray(next.sections)){ throw new Error("bad"); }
+      var msg = REMOTE
+        ? "팀 전체가 보는 공유 데이터가 파일 내용으로 덮어써집니다. 되돌릴 수 없으니 먼저 내보내기로 백업해 두세요."
+        : "현재 화면의 데이터가 파일 내용으로 덮어써집니다.";
+      return confirmDelete("가져온 파일로 바꿀까요?", msg, "덮어쓰기").then(function(ok){
+        if(!ok){ return; }
+        state.sections = normalize(next.sections);
+        render();
+        store.replaceAll();
+        toast("파일을 가져왔습니다.");
+      });
+    }).catch(function(){ toast("가져올 수 없는 파일입니다."); });
+  });
+
+  // ---------- dialog / toast / notice ----------
+  var dlg = document.getElementById("confirmDialog");
+  function confirmDelete(title, message, okLabel){
+    document.getElementById("confirmTitle").textContent = title;
+    document.getElementById("confirmMessage").textContent = message;
+    document.getElementById("confirmOk").textContent = okLabel || "삭제";
+    dlg.returnValue = "";
+    dlg.showModal();
+    return new Promise(function(resolve){
+      dlg.addEventListener("close", function(){ resolve(dlg.returnValue === "ok"); }, { once:true });
+    });
+  }
+
+  function toast(msg, undo){
+    var region = document.getElementById("toastRegion");
+    var el = document.createElement("div");
+    el.className = "toast";
+    el.innerHTML = '<span class="toast__msg"></span>' + (undo ? '<button type="button" class="toast__undo">되돌리기</button>' : "");
+    el.querySelector(".toast__msg").textContent = msg;
+    var timer = setTimeout(function(){ el.remove(); }, 6000);
+    if(undo){
+      el.querySelector(".toast__undo").addEventListener("click", function(){ clearTimeout(timer); el.remove(); undo(); });
+    }
+    region.appendChild(el);
+  }
+
+  function showLoadError(err){
+    var missing = err && (err.code === "42P01" || err.code === "PGRST205" || /does not exist|schema cache/i.test(err.message || ""));
+    var box = document.getElementById("notice");
+    box.hidden = false;
+    box.innerHTML = missing
+      ? "<b>Supabase에 이 도구의 테이블이 아직 없습니다.</b> Supabase 대시보드 › SQL Editor에서 <code>supabase/setup.sql</code> 내용을 실행한 뒤 새로고침하세요."
+      : "<b>공유 데이터를 불러오지 못했습니다.</b> 네트워크 연결 또는 SUPABASE_URL / SUPABASE_ANON_KEY 값을 확인해 주세요." +
+        ' <button type="button" class="btn btn--ghost btn--sm" id="retryLoad">다시 시도</button>';
+    var retry = document.getElementById("retryLoad");
+    if(retry){ retry.addEventListener("click", function(){ box.hidden = true; start(); }); }
+    setStatus("error", missing ? "설정 필요" : "불러오기 실패");
+  }
+
+  // Re-tick the D-day chips once a minute so an open tab doesn't go stale.
+  setInterval(function(){
+    sheet.querySelectorAll('input[data-cfield="at"]').forEach(paintDday);
+  }, 60000);
+
+  // ---------- boot ----------
+  function start(){
+    if(REMOTE && !window.supabase){
+      showLoadError({ message: "supabase-js not loaded" });
+      return;
+    }
+    if(REMOTE && !sb){ sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
+    setStatus("busy", "불러오는 중…");
+    store.load().then(function(){
+      loaded = true;
+      render();
+      if(REMOTE){
+        updateRemoteStatus();
+        if(!channel){ subscribe(); }
+      }else{
+        setStatus("local", "로컬 모드 · 이 브라우저에만 저장");
+      }
+    }).catch(showLoadError);
+  }
+
+  renderHeader();
+  start();
+})();
+</script>
+</body>
+</html>

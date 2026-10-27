@@ -180,7 +180,7 @@
     background: var(--surface); border:1px solid var(--hairline); border-radius: var(--radius);
     overflow:auto; max-height: calc(100vh - 210px); min-height: 320px;
   }
-  table.sheet{ border-collapse:separate; border-spacing:0; width:100%; min-width: 2008px; font-size:0.8125rem; line-height:1.4; table-layout:fixed; }
+  table.sheet{ border-collapse:separate; border-spacing:0; width:100%; min-width: 1764px; font-size:0.8125rem; line-height:1.4; table-layout:fixed; }
   .sheet thead th{
     position: sticky; z-index: 2; background: var(--surface-pearl);
     text-align:left; font-size:0.75rem; font-weight:600; color: var(--muted-80);
@@ -192,6 +192,10 @@
   }
   .sheet thead tr:nth-child(2) th{ top: 34px; font-size:11px; color: var(--muted); font-weight:500; }
   .sheet thead th.th-group{ border-bottom-color: var(--divider); }
+  /* Narrow columns (No., 체크, 담당자 확인) give up the header's side padding to fit. */
+  .sheet thead th.th-tight{ padding-left:2px; padding-right:2px; text-align:center; }
+  .sheet thead th.th-wrap{ white-space:normal; line-height:1.25; padding-top:4px; padding-bottom:4px; }
+  .sheet tr.item td:last-child{ padding-left:4px; padding-right:4px; }
   .sheet thead th + th{ border-left:1px solid var(--divider); }
   .sheet thead tr:nth-child(2) th{ border-left:1px solid var(--divider); }
 
@@ -256,17 +260,18 @@
   .cell-input::placeholder{ color: var(--text-disabled); }
   .cell-input--strong{ font-weight:600; }
   .cell-input--sm{ font-size:0.75rem; }
-  input.cell-date{ font-family: var(--font-mono); font-size:0.75rem; height:28px; padding: 0 4px; min-width:0; }
+  input.cell-date{ font-family: var(--font-mono); font-size:0.6875rem; letter-spacing:-0.02em; height:28px; padding: 0 2px; min-width:0; }
+  input.cell-date::-webkit-calendar-picker-indicator{ margin-left:1px; padding:0; width:12px; height:12px; }
 
   .c-center{ text-align:center; }
   .urgent-box{
-    display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; cursor:pointer; border-radius: var(--radius-sm);
+    display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; cursor:pointer; border-radius: var(--radius-sm);
   }
   .urgent-box:hover{ background: var(--warn-soft); }
   .urgent-box input{ width:16px; height:16px; margin:0; accent-color: oklch(70% 0.16 85); cursor:pointer; }
   /* 담당자 확인 — same hit area as the 체크 box, but a "done" green rather than the warning yellow. */
   .check-box{
-    display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; cursor:pointer; border-radius: var(--radius-sm);
+    display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; cursor:pointer; border-radius: var(--radius-sm);
   }
   .check-box:hover{ background: var(--success-soft); }
   .check-box input{ width:16px; height:16px; margin:0; accent-color: var(--success); cursor:pointer; }
@@ -277,7 +282,7 @@
 
   /* 확인 사항: a list of (대분류, 일시) pairs inside one cell */
   .checks{ display:flex; flex-direction:column; gap:2px; }
-  .check{ display:grid; grid-template-columns: minmax(0,1fr) 270px; gap: 6px; align-items:start; }
+  .check{ display:grid; grid-template-columns: minmax(0,1fr) 216px; gap: 6px; align-items:start; }
   .check + .check{ border-top:1px dashed var(--divider); padding-top:2px; }
   .check__kind{ display:flex; flex-direction:column; gap:2px; min-width:0; }
   .check.is-preset .check__kind textarea{ display:none; }
@@ -291,13 +296,13 @@
   .check__when{ display:flex; align-items:center; gap:4px; }
   .check__when input.cell-date{ flex: 1 1 auto; }
   input.cell-time{
-    flex: 0 0 52px; width:52px; height:28px; padding: 0 4px; text-align:center;
+    flex: 0 0 44px; width:44px; height:28px; padding: 0 2px; text-align:center;
     font-family: var(--font-mono); font-size:0.75rem; font-variant-numeric: tabular-nums;
   }
   input.cell-time[aria-invalid="true"]{ border-color: var(--error); background: var(--error-soft); }
   .dday{
-    font-family: var(--font-mono); font-size:10.5px; font-weight:600; padding: 1px 5px; border-radius:4px;
-    white-space:nowrap; min-width: 40px; text-align:center;
+    font-family: var(--font-mono); font-size:10.5px; font-weight:600; padding: 1px 4px; border-radius:4px;
+    white-space:nowrap; min-width: 34px; text-align:center;
     background: var(--disabled); color: var(--muted-80);
   }
   .dday:empty{ visibility:hidden; }
@@ -319,7 +324,7 @@
   .yn__opt{ position:relative; }
   .yn__opt input{ position:absolute; opacity:0; inset:0; margin:0; cursor:pointer; }
   .yn__opt span{
-    display:flex; align-items:center; justify-content:center; width:36px; height:28px;
+    display:flex; align-items:center; justify-content:center; width:28px; height:28px;
     font-family: var(--font-mono); font-weight:600; font-size:0.8125rem; color: var(--muted);
     transition: background-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out);
   }
@@ -329,7 +334,7 @@
   .yn__opt--y input:checked + span{ background: var(--success); color: var(--on-primary); }
   .yn__opt--n input:checked + span{ background: var(--error); color: var(--on-primary); }
 
-  .row-actions{ display:flex; gap:0; align-items:center; justify-content:center; flex-wrap:wrap; padding-top:3px; }
+  .row-actions{ display:flex; gap:2px; align-items:center; justify-content:center; flex-wrap:nowrap; padding-top:3px; }
 
   /* ---------- dialog ---------- */
   dialog{
@@ -410,25 +415,25 @@
   <div class="sheet-wrap">
     <table class="sheet" id="sheet">
       <colgroup>
-        <col style="width:48px">
-        <col style="width:52px">
+        <col style="width:36px">
+        <col style="width:40px">
         <col style="width:130px">
         <col style="width:210px">
         <col style="width:250px">
-        <col style="width:290px">
-        <col style="width:170px">
-        <col style="width:96px">
         <col style="width:230px">
-        <col style="width:130px">
-        <col style="width:100px">
+        <col style="width:140px">
         <col style="width:76px">
+        <col style="width:180px">
+        <col style="width:110px">
+        <col style="width:80px">
+        <col style="width:52px">
         <col style="width:150px">
-        <col style="width:64px">
+        <col style="width:80px">
       </colgroup>
       <thead>
         <tr>
-          <th rowspan="2">No.</th>
-          <th rowspan="2">체크</th>
+          <th rowspan="2" class="th-tight">No.</th>
+          <th rowspan="2" class="th-tight">체크</th>
           <th colspan="2" class="th-group g-start g-tint">이벤트 및 단말</th>
           <th colspan="2" class="th-group g-start">확인 사항</th>
           <th rowspan="2" class="g-start g-tint">적용 영역</th>
@@ -446,7 +451,7 @@
           <th>추가 내용 기재</th>
           <th class="g-start g-tint">팀</th>
           <th class="g-tint">담당자</th>
-          <th class="g-tint c-center">담당자 확인</th>
+          <th class="g-tint c-center th-tight th-wrap">담당자<br>확인</th>
         </tr>
       </thead>
     </table>

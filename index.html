@@ -109,6 +109,11 @@
   .who[hidden]{ display:none; }
   .who__team{ color: var(--muted); }
   .who__name{ font-weight:600; }
+  .who__role{
+    font-size:0.6875rem; font-weight:600; padding: 2px 7px; border-radius: var(--radius-pill);
+    background: var(--disabled); color: var(--muted-80); white-space:nowrap;
+  }
+  .who__role[data-role="admin"]{ background: var(--primary-soft); color: var(--primary); }
   .who__change{
     border:none; background:none; color: var(--primary); font-size:0.75rem; font-weight:600;
     padding: 4px 6px; border-radius:4px; cursor:pointer;
@@ -124,14 +129,19 @@
     font-family: var(--font-mono); font-size:11.5px; font-weight:600; color: var(--muted);
     background: var(--surface-pearl); border:1px solid var(--hairline); border-radius: var(--radius-pill); padding: 2px 8px;
   }
-  .log__list{
-    list-style:none; margin:0; padding:0; display:grid; gap:0;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); column-gap: var(--space-lg);
+  /* One entry per line: what happened (+ item name) on the left, who | when pinned right. */
+  .log__list{ list-style:none; margin:0; padding:0; }
+  .log__item{
+    display:flex; align-items:baseline; gap: var(--space-sm);
+    padding: 7px 0; border-bottom:1px solid var(--divider); min-width:0; font-size:0.8125rem;
   }
-  .log__item{ padding: 8px 0; border-bottom:1px solid var(--divider); min-width:0; }
-  .log__msg{ font-size:0.8125rem; font-weight:600; }
-  .log__target{ font-weight:400; color: var(--muted); margin-left:6px; }
-  .log__meta{ margin-top:2px; font-family: var(--font-mono); font-size:11px; color: var(--muted); }
+  .log__msg{ font-weight:600; white-space:nowrap; flex-shrink:0; }
+  .log__target{ color: var(--muted); flex:1 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .log__meta{ margin-left:auto; flex-shrink:0; font-family: var(--font-mono); font-size:11px; color: var(--muted); white-space:nowrap; }
+  @media (max-width: 40rem){
+    .log__item{ flex-wrap:wrap; }
+    .log__msg{ white-space:normal; }
+  }
   .log__empty{ color: var(--muted); font-size:0.8125rem; padding: 8px 0; }
   .log__more{ margin-top: var(--space-sm); }
   /* .btn sets display, which would otherwise beat the hidden attribute. */
@@ -307,6 +317,17 @@
   .cell-input:focus{ outline-color: var(--primary-focus); background: var(--surface); border-color: transparent; }
   .cell-input::placeholder{ color: var(--text-disabled); }
   .cell-input--strong{ font-weight:600; }
+  /* Cells the current person can't edit (권한): plain text, no hover affordance, no placeholder. */
+  .cell-input[readonly], .cell-input:disabled, .section-name[readonly], .section-note[readonly]{ cursor:default; }
+  .cell-input[readonly]:hover, .cell-input[readonly]:focus,
+  .section-name[readonly]:hover, .section-name[readonly]:focus,
+  .section-note[readonly]:hover, .section-note[readonly]:focus{ border-color: transparent; background: transparent; outline-color: transparent; }
+  .cell-input[readonly]::placeholder, .section-note[readonly]::placeholder{ color: transparent; }
+  .cell-input:disabled{ opacity:1; color: inherit; -webkit-text-fill-color: currentColor; }
+  select.cell-select:disabled{ background-image:none; padding-right:6px; }
+  .urgent-box:has(input:disabled){ cursor:default; }
+  .urgent-box:has(input:disabled):hover{ background: transparent; }
+  .urgent-box input:disabled{ cursor:default; }
   .cell-input--sm{ font-size:0.75rem; }
   input.cell-date{ font-family: var(--font-mono); font-size:0.6875rem; letter-spacing:-0.02em; height:28px; padding: 0 2px; min-width:0; }
   input.cell-date::-webkit-calendar-picker-indicator{ margin-left:1px; padding:0; width:12px; height:12px; }
@@ -444,6 +465,7 @@
     <div class="app__meta">
       <span class="who" id="whoami" hidden>
         <span class="who__team" id="whoTeam"></span><span class="who__name" id="whoName"></span>
+        <span class="who__role" id="whoRole"></span>
         <button type="button" class="who__change" id="changeUserBtn">변경</button>
       </span>
       <span class="app__meta-text sync" id="saveStatus" aria-live="polite"></span>
@@ -1091,69 +1113,69 @@
   }
 
   function checkHTML(c, i){
-    var d = dday(c.at), kind = checkKind(c);
+    var d = dday(c.at), kind = checkKind(c), lk = locked();
     return '<div class="check' + (kind === "preset" ? " is-preset" : "") + '" data-check="' + i + '">' +
       '<div class="check__kind">' +
-        '<select class="cell-input cell-select" data-cfield="kind" aria-label="확인 사항 구분">' +
+        '<select class="cell-input cell-select" data-cfield="kind" aria-label="확인 사항 구분"' + (lk ? " disabled" : "") + '>' +
           '<option value="preset"' + (kind === "preset" ? " selected" : "") + ">" + PRESET_LABEL + "</option>" +
           '<option value="custom"' + (kind === "custom" ? " selected" : "") + ">직접 입력</option>" +
         "</select>" +
-        '<textarea class="cell-input cell-input--sm" rows="1" data-cfield="label" placeholder="구분 직접 입력" aria-label="확인 사항 구분 직접 입력">' + esc(cellValue(c, "label")) + "</textarea>" +
+        '<textarea class="cell-input cell-input--sm" rows="1" data-cfield="label" placeholder="구분 직접 입력" aria-label="확인 사항 구분 직접 입력"' + RO(lk) + '>' + esc(cellValue(c, "label")) + "</textarea>" +
       "</div>" +
       '<div class="check__when">' +
-        '<input type="date" class="cell-input cell-date" data-cfield="date" value="' + esc(cellValue(c, "date")) + '" max="9999-12-31" aria-label="확인 사항 날짜">' +
-        '<input type="text" class="cell-input cell-time" data-cfield="time" value="' + esc(cellValue(c, "time")) + '" inputmode="numeric" maxlength="5" placeholder="23:59" autocomplete="off" aria-label="확인 사항 시각 (24시간, 시:분)">' +
+        '<input type="date" class="cell-input cell-date" data-cfield="date" value="' + esc(cellValue(c, "date")) + '" max="9999-12-31" aria-label="확인 사항 날짜"' + (lk ? " disabled" : "") + '>' +
+        '<input type="text" class="cell-input cell-time" data-cfield="time" value="' + esc(cellValue(c, "time")) + '" inputmode="numeric" maxlength="5" placeholder="23:59" autocomplete="off" aria-label="확인 사항 시각 (24시간, 시:분)"' + RO(lk) + '>' +
         '<span class="dday"' + (d.tone ? ' data-tone="' + d.tone + '"' : "") + ">" + d.text + "</span>" +
-        '<button type="button" class="btn btn--icon btn--icon--xs is-danger" data-action="remove-check" aria-label="확인 사항 삭제">' + icon("x") + "</button>" +
+        (lk ? "" : '<button type="button" class="btn btn--icon btn--icon--xs is-danger" data-action="remove-check" aria-label="확인 사항 삭제">' + icon("x") + "</button>") +
       "</div>" +
     "</div>";
   }
 
   function rowHTML(sec, r, idx){
-    var name = "ext-" + r.id;
+    var name = "ext-" + r.id, lk = locked();
     return '<tr class="item' + (r.urgent ? " is-urgent" : "") + '" data-row="' + r.id + '">' +
       '<td class="row-no">' + (rowNumbers[r.id] || "") + "</td>" +
-      '<td class="c-center"><label class="urgent-box" title="체크 표시"><input type="checkbox" data-field="urgent"' + (r.urgent ? " checked" : "") + '><span class="visually-hidden">체크</span></label></td>' +
-      '<td class="g-start g-tint"><textarea class="cell-input" rows="1" data-field="cat" placeholder="대분류" aria-label="이벤트 및 단말 대분류">' + esc(r.cat) + "</textarea></td>" +
-      '<td class="g-tint"><textarea class="cell-input cell-input--strong" rows="1" data-field="sub" placeholder="소분류" aria-label="이벤트 및 단말 소분류">' + esc(r.sub) + "</textarea></td>" +
+      '<td class="c-center"><label class="urgent-box" title="체크 표시"><input type="checkbox" data-field="urgent"' + (r.urgent ? " checked" : "") + (lk ? " disabled" : "") + '><span class="visually-hidden">체크</span></label></td>' +
+      '<td class="g-start g-tint"><textarea class="cell-input" rows="1" data-field="cat" placeholder="대분류" aria-label="이벤트 및 단말 대분류"' + RO(lk) + '>' + esc(r.cat) + "</textarea></td>" +
+      '<td class="g-tint"><textarea class="cell-input cell-input--strong" rows="1" data-field="sub" placeholder="소분류" aria-label="이벤트 및 단말 소분류"' + RO(lk) + '>' + esc(r.sub) + "</textarea></td>" +
       '<td colspan="2" class="g-start"><div class="checks">' + r.checks.map(checkHTML).join("") +
-        '<button type="button" class="check-add" data-action="add-check">' + icon("plus") + "확인 사항 추가</button></div></td>" +
-      '<td class="g-start g-tint"><textarea class="cell-input cell-input--sm" rows="1" data-field="area" placeholder="적용 영역" aria-label="적용 영역">' + esc(r.area) + "</textarea></td>" +
+        (lk ? "" : '<button type="button" class="check-add" data-action="add-check">' + icon("plus") + "확인 사항 추가</button>") + "</div></td>" +
+      '<td class="g-start g-tint"><textarea class="cell-input cell-input--sm" rows="1" data-field="area" placeholder="적용 영역" aria-label="적용 영역"' + RO(lk) + '>' + esc(r.area) + "</textarea></td>" +
       '<td class="g-start c-center"><div class="yn" role="radiogroup" aria-label="기간 연장">' +
         '<label class="yn__opt yn__opt--y"><input type="radio" name="' + name + '" value="Y" data-field="extend"' + (r.extend === "Y" ? " checked" : "") + "><span>Y</span></label>" +
         '<label class="yn__opt yn__opt--n"><input type="radio" name="' + name + '" value="N" data-field="extend"' + (r.extend === "N" ? " checked" : "") + "><span>N</span></label>" +
       "</div></td>" +
       '<td><textarea class="cell-input" rows="1" data-field="reply" placeholder="연장/종료/추가 내용" aria-label="추가 내용 기재">' + esc(r.reply) + "</textarea></td>" +
-      '<td class="g-start g-tint"><textarea class="cell-input" rows="1" data-field="team" placeholder="팀" aria-label="요청자 팀">' + esc(r.team) + "</textarea></td>" +
-      '<td class="g-tint"><textarea class="cell-input" rows="1" data-field="owner" placeholder="담당자" aria-label="요청자 담당자">' + esc(r.owner) + "</textarea></td>" +
+      '<td class="g-start g-tint"><textarea class="cell-input" rows="1" data-field="team" placeholder="팀" aria-label="요청자 팀"' + RO(lk) + '>' + esc(r.team) + "</textarea></td>" +
+      '<td class="g-tint"><textarea class="cell-input" rows="1" data-field="owner" placeholder="담당자" aria-label="요청자 담당자"' + RO(lk) + '>' + esc(r.owner) + "</textarea></td>" +
       '<td class="g-tint c-center"><label class="check-box" title="담당자 확인"><input type="checkbox" data-field="owner_ok"' + (r.owner_ok ? " checked" : "") + '><span class="visually-hidden">담당자 확인</span></label>' +
         '<span class="ok-stamp">' + esc(okStamp(r)) + "</span></td>" +
-      '<td class="g-start"><textarea class="cell-input cell-input--sm" rows="1" data-field="memo" placeholder="비고" aria-label="비고">' + esc(r.memo) + "</textarea></td>" +
-      '<td class="g-start"><div class="row-actions">' +
+      '<td class="g-start"><textarea class="cell-input cell-input--sm" rows="1" data-field="memo" placeholder="비고" aria-label="비고"' + RO(lk) + '>' + esc(r.memo) + "</textarea></td>" +
+      '<td class="g-start"><div class="row-actions">' + (lk ? "" :
         '<button type="button" class="btn btn--icon btn--icon--xs" data-action="row-up" aria-label="위로 이동"' + (idx === 0 ? " disabled" : "") + ">" + icon("up") + "</button>" +
         '<button type="button" class="btn btn--icon btn--icon--xs" data-action="row-down" aria-label="아래로 이동"' + (idx === sec.rows.length - 1 ? " disabled" : "") + ">" + icon("down") + "</button>" +
-        '<button type="button" class="btn btn--icon btn--icon--xs is-danger" data-action="row-delete" aria-label="행 삭제">' + icon("trash") + "</button>" +
+        '<button type="button" class="btn btn--icon btn--icon--xs is-danger" data-action="row-delete" aria-label="행 삭제">' + icon("trash") + "</button>") +
       "</div></td>" +
     "</tr>";
   }
 
   function sectionHTML(sec, si){
-    var rows = onlyUrgent ? sec.rows.filter(function(r){ return r.urgent; }) : sec.rows;
+    var rows = onlyUrgent ? sec.rows.filter(function(r){ return r.urgent; }) : sec.rows, lk = locked();
     if(onlyUrgent && rows.length === 0){ return ""; }
     var body = rows.length
       ? rows.map(function(r){ return rowHTML(sec, r, sec.rows.indexOf(r)); }).join("")
-      : '<tr class="empty-row"><td colspan="' + COLS + '">항목이 없습니다. 오른쪽 위 ‘항목 추가’로 행을 만드세요.</td></tr>';
+      : '<tr class="empty-row"><td colspan="' + COLS + '">항목이 없습니다.' + (lk ? "" : " 오른쪽 위 ‘항목 추가’로 행을 만드세요.") + "</td></tr>";
     return '<tbody class="section" data-sec="' + sec.id + '">' +
       '<tr class="section-head"><th colspan="' + COLS + '" scope="rowgroup"><div class="section-head__inner">' +
-        '<input class="section-name" data-sfield="name" value="' + esc(sec.name) + '" aria-label="구분 이름" placeholder="구분 이름">' +
+        '<input class="section-name" data-sfield="name" value="' + esc(sec.name) + '" aria-label="구분 이름" placeholder="구분 이름"' + RO(lk) + '>' +
         '<span class="section-count">' + sec.rows.length + "건</span>" +
-        '<textarea class="section-note" rows="1" data-sfield="note" aria-label="구분 안내 문구" placeholder="안내 문구">' + esc(sec.note) + "</textarea>" +
-        '<div class="section-actions">' +
+        '<textarea class="section-note" rows="1" data-sfield="note" aria-label="구분 안내 문구" placeholder="안내 문구"' + RO(lk) + '>' + esc(sec.note) + "</textarea>" +
+        (lk ? "" : '<div class="section-actions">' +
           '<button type="button" class="btn btn--ghost btn--sm" data-action="row-add">' + icon("plus") + "항목 추가</button>" +
           '<button type="button" class="btn btn--icon" data-action="sec-up" aria-label="구분 위로 이동"' + (si === 0 ? " disabled" : "") + ">" + icon("up") + "</button>" +
           '<button type="button" class="btn btn--icon" data-action="sec-down" aria-label="구분 아래로 이동"' + (si === state.sections.length - 1 ? " disabled" : "") + ">" + icon("down") + "</button>" +
           '<button type="button" class="btn btn--icon is-danger" data-action="sec-delete" aria-label="구분 삭제">' + icon("trash") + "</button>" +
-        "</div>" +
+        "</div>") +
       "</div></th></tr>" + body + "</tbody>";
   }
 
@@ -1179,6 +1201,27 @@
     renderSummary();
   }
 
+  // ---------- 권한 ----------
+  // Admins (미디어로그 정태중 / 심세련) edit everything. Everyone else answers only in the
+  // 회신 columns: 기간 연장, 추가 내용 기재 and 담당자 확인. This is decided from the name typed
+  // in the start dialog, so it guides people rather than secures data — the database itself
+  // still accepts any write made with the public key.
+  var ADMIN_TEAM = "미디어로그";
+  var ADMIN_NAMES = ["정태중", "심세련"];
+  var REPLY_FIELDS = { extend: true, reply: true, owner_ok: true };
+  function squash(s){ return String(s || "").replace(/\s+/g, ""); }
+  function isAdmin(){
+    if(!user || squash(user.team) !== ADMIN_TEAM){ return false; }
+    var n = squash(user.name);
+    return ADMIN_NAMES.some(function(a){ return n.indexOf(a) === 0; });   // "정태중님" counts too
+  }
+  function locked(){ return !isAdmin(); }
+  function RO(lk){ return lk ? " readonly" : ""; }
+  // May the current person change this element?
+  function canEdit(el){
+    return isAdmin() || !!(el.dataset && el.dataset.field && REPLY_FIELDS[el.dataset.field]);
+  }
+
   // ---------- 담당자 확인 stamp ----------
   function okStamp(r){
     return r.owner_ok && r.owner_ok_at ? fmtStamp(r.owner_ok_at) + " " + (r.owner_ok_by || "") + " 확인" : "";
@@ -1193,7 +1236,9 @@
   };
   var logShown = LOG_PAGE;
 
-  function rowLabel(row){ return "No." + (rowNumbers[row.id] || "?"); }
+  function rowNo(row){ return String(rowNumbers[row.id] || "?"); }
+  // Log lines read "36 | 항목 삭제": the row number, a bar, then what happened.
+  function rowLabel(row){ return rowNo(row) + " |"; }
 
   function addLog(e){
     var existing = state.logs.find(function(x){ return x.id === e.id; });
@@ -1214,14 +1259,20 @@
     store.logInserted(entry);
   }
 
+  // Entries written before the "36 | …" format read "No.36 항목 삭제" / "No.2 → No.3 순서 변경".
+  function logText(m){
+    return String(m || "").replace(/^No\.(\S+)(?: → No\.(\S+))? /, function(_, a, b){ return a + (b ? " → " + b : "") + " | "; });
+  }
+
   function renderLogs(){
     var list = document.getElementById("logList");
     var shown = state.logs.slice(0, logShown);
     document.getElementById("logCount").textContent = state.logs.length + "건";
     list.innerHTML = shown.length ? shown.map(function(e){
       return '<li class="log__item">' +
-        '<div class="log__msg">' + esc(e.message) + (e.target ? '<span class="log__target">' + esc(e.target) + "</span>" : "") + "</div>" +
-        '<div class="log__meta"' + (e.team ? ' title="' + esc(e.team) + '"' : "") + ">" + esc(e.name || "이름 없음") + " | " + fmtStamp(e.created_at) + "</div>" +
+        '<span class="log__msg">' + esc(logText(e.message)) + "</span>" +
+        (e.target ? '<span class="log__target" title="' + esc(e.target) + '">' + esc(e.target) + "</span>" : "") +
+        '<span class="log__meta"' + (e.team ? ' title="' + esc(e.team) + '"' : "") + ">" + esc(e.name || "이름 없음") + " | " + fmtStamp(e.created_at) + "</span>" +
       "</li>";
     }).join("") : '<li class="log__empty">아직 기록이 없습니다.</li>';
     document.getElementById("logMore").hidden = state.logs.length <= logShown;
@@ -1396,6 +1447,7 @@
 
   sheet.addEventListener("input", function(e){
     var el = e.target, c = ctx(el);
+    if(!canEdit(el)){ return; }
     if(el.dataset.sfield && c.sec){
       c.sec[el.dataset.sfield] = el.value;
       store.secChanged(c.sec, [el.dataset.sfield]);
@@ -1432,7 +1484,7 @@
 
   sheet.addEventListener("change", function(e){
     var el = e.target, c = ctx(el);
-    if(!c.row){ return; }
+    if(!c.row || !canEdit(el)){ return; }
     if(el.dataset.field === "urgent"){
       c.row.urgent = el.checked;
       c.tr.classList.toggle("is-urgent", el.checked);
@@ -1483,7 +1535,7 @@
     }
 
     var btn = e.target.closest("[data-action]");
-    if(!btn){ return; }
+    if(!btn || !isAdmin()){ return; }
     var c = ctx(btn), sec = c.sec, row = c.row;
     var si = state.sections.indexOf(sec);
     var ri = sec && row ? sec.rows.indexOf(row) : -1;
@@ -1515,10 +1567,10 @@
         break;
       case "row-up":
       case "row-down":
-        var before = rowLabel(row);
+        var before = rowNo(row);
         move(sec.rows, ri, btn.dataset.action === "row-up" ? ri - 1 : ri + 1, rowMoved);
         render();
-        logAction(before + " → " + rowLabel(row) + " 순서 변경", row);
+        logAction(before + " → " + rowNo(row) + " | 순서 변경", row);
         break;
       case "row-delete":
         confirmDelete("이 항목을 삭제할까요?", "‘" + (row.sub || row.cat || "이름 없는 항목") + "’ 행이 삭제됩니다.").then(function(ok){
@@ -1577,6 +1629,7 @@
   });
 
   document.getElementById("addSectionBtn").addEventListener("click", function(){
+    if(!isAdmin()){ return; }
     if(onlyUrgent){ setOnlyUrgent(false); }
     var s = { id: uid("s"), sort_order: nextOrder(state.sections), name:"", note:"", rows:[blankRow(0)] };
     state.sections.push(s);
@@ -1602,6 +1655,7 @@
     document.getElementById("importFile").click();
   });
   document.getElementById("importFile").addEventListener("change", function(e){
+    if(!isAdmin()){ e.target.value = ""; return; }
     var file = e.target.files[0];
     e.target.value = "";
     if(!file){ return; }
@@ -1712,6 +1766,12 @@
       document.getElementById("whoTeam").textContent = user.team;
       document.getElementById("whoName").textContent = user.name;
     }
+    var admin = isAdmin(), role = document.getElementById("whoRole");
+    role.textContent = admin ? "관리자" : "회신만 편집";
+    role.dataset.role = admin ? "admin" : "member";
+    role.title = admin ? "모든 칸과 구분·항목을 편집할 수 있습니다." : "기간 연장, 추가 내용 기재, 담당자 확인만 편집할 수 있습니다.";
+    document.getElementById("addSectionBtn").hidden = !admin;
+    document.getElementById("importBtn").hidden = !admin;
   }
   function fillTeamOptions(){
     var teams = {};
@@ -1746,6 +1806,7 @@
     user = { team: team, name: name };
     try{ localStorage.setItem(USER_KEY, JSON.stringify(user)); }catch(err){}
     renderUser();
+    if(loaded){ render(); }       // 권한에 따라 편집 가능한 칸이 달라진다
     if(channel && online){ channel.track(presenceMeta()); }
     userDlg.close();
   });

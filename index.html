@@ -45,6 +45,10 @@
     --urgent-bg-hover: oklch(93% 0.13 100);
     --urgent-edge: oklch(80% 0.16 95);
 
+    /* D-day chips within 7 days. */
+    --due: oklch(58% 0.21 25);
+    --due-today: oklch(44% 0.18 25);
+
     /* Column-group banding in the sheet. */
     --col-tint: oklch(97.6% 0.009 256);
     --col-tint-head: oklch(94.8% 0.016 256);
@@ -297,8 +301,10 @@
     background: var(--disabled); color: var(--muted-80);
   }
   .dday:empty{ visibility:hidden; }
-  .dday[data-tone="soon"]{ background: var(--warn-soft); color: var(--warn-ink); }
-  .dday[data-tone="today"]{ background: var(--error-soft); color: var(--error-ink); }
+  /* Due-soon chips are solid reds so they stay legible on the yellow 체크 rows — a translucent
+     tint would mix with the row colour into orange and disappear. D-day goes one step darker. */
+  .dday[data-tone="soon"]{ background: var(--due); color: var(--on-primary); }
+  .dday[data-tone="today"]{ background: var(--due-today); color: var(--on-primary); }
   .dday[data-tone="past"]{ background: transparent; color: var(--text-disabled); text-decoration: line-through; }
   .check-add{
     align-self:flex-start; display:inline-flex; align-items:center; gap:4px; border:none; background:none;

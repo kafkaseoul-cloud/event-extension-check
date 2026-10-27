@@ -40,7 +40,7 @@
     --warn-soft: oklch(60% 0.15 75 / 16%);
     --warn-ink: oklch(32% 0.11 65);
 
-    /* 마감 임박 행 — the sheet's yellow-cell convention, softened just enough to keep text legible. */
+    /* 체크 행 — the sheet's yellow-cell convention, softened just enough to keep text legible. */
     --urgent-bg: oklch(95.5% 0.115 102);
     --urgent-bg-hover: oklch(93% 0.13 100);
     --urgent-edge: oklch(80% 0.16 95);
@@ -176,7 +176,7 @@
     background: var(--surface); border:1px solid var(--hairline); border-radius: var(--radius);
     overflow:auto; max-height: calc(100vh - 210px); min-height: 320px;
   }
-  table.sheet{ border-collapse:separate; border-spacing:0; width:100%; min-width: 1880px; font-size:0.8125rem; line-height:1.4; table-layout:fixed; }
+  table.sheet{ border-collapse:separate; border-spacing:0; width:100%; min-width: 2008px; font-size:0.8125rem; line-height:1.4; table-layout:fixed; }
   .sheet thead th{
     position: sticky; z-index: 2; background: var(--surface-pearl);
     text-align:left; font-size:0.75rem; font-weight:600; color: var(--muted-80);
@@ -260,6 +260,16 @@
   }
   .urgent-box:hover{ background: var(--warn-soft); }
   .urgent-box input{ width:16px; height:16px; margin:0; accent-color: oklch(70% 0.16 85); cursor:pointer; }
+  /* 담당자 확인 — same hit area as the 체크 box, but a "done" green rather than the warning yellow. */
+  .check-box{
+    display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; cursor:pointer; border-radius: var(--radius-sm);
+  }
+  .check-box:hover{ background: var(--success-soft); }
+  .check-box input{ width:16px; height:16px; margin:0; accent-color: var(--success); cursor:pointer; }
+  .sheet td.row-no{
+    text-align:center; padding-top:10px; font-family: var(--font-mono); font-size:0.75rem;
+    font-variant-numeric: tabular-nums; color: var(--muted);
+  }
 
   /* 확인 사항: a list of (대분류, 일시) pairs inside one cell */
   .checks{ display:flex; flex-direction:column; gap:2px; }
@@ -379,7 +389,7 @@
   <div class="toolbar">
     <div class="toolbar__left">
       <div class="summary" id="summary" aria-live="polite"></div>
-      <label class="filter-toggle"><input type="checkbox" id="onlyUrgent"> 마감 임박만 보기</label>
+      <label class="filter-toggle"><input type="checkbox" id="onlyUrgent"> 체크 항목만 보기</label>
     </div>
     <div class="toolbar__right">
       <button type="button" class="btn btn--ghost btn--sm" id="exportBtn"><svg class="icon"><use href="#i-download"/></svg>내보내기</button>
@@ -394,7 +404,8 @@
   <div class="sheet-wrap">
     <table class="sheet" id="sheet">
       <colgroup>
-        <col style="width:56px">
+        <col style="width:48px">
+        <col style="width:52px">
         <col style="width:130px">
         <col style="width:210px">
         <col style="width:250px">
@@ -404,17 +415,19 @@
         <col style="width:230px">
         <col style="width:130px">
         <col style="width:100px">
+        <col style="width:76px">
         <col style="width:150px">
         <col style="width:64px">
       </colgroup>
       <thead>
         <tr>
-          <th rowspan="2">임박</th>
+          <th rowspan="2">No.</th>
+          <th rowspan="2">체크</th>
           <th colspan="2" class="th-group g-start g-tint">이벤트 및 단말</th>
           <th colspan="2" class="th-group g-start">확인 사항</th>
           <th rowspan="2" class="g-start g-tint">적용 영역</th>
           <th colspan="2" class="th-group g-start">사업 피드백 작성</th>
-          <th colspan="2" class="th-group g-start g-tint">요청자</th>
+          <th colspan="3" class="th-group g-start g-tint">요청자</th>
           <th rowspan="2" class="g-start">비고</th>
           <th rowspan="2" class="g-start"><span class="visually-hidden">행 관리</span></th>
         </tr>
@@ -427,6 +440,7 @@
           <th>추가 내용 기재</th>
           <th class="g-start g-tint">팀</th>
           <th class="g-tint">담당자</th>
+          <th class="g-tint c-center">담당자 확인</th>
         </tr>
       </thead>
     </table>
@@ -448,7 +462,7 @@
 
 <div class="toast-region" id="toastRegion" aria-live="polite"></div>
 
-<script type="application/json" id="seedData">{"title":"진행중인 이벤트 연장/종료 확인 건","notices":["장기 프로모션으로 노출 기간 길게 적용 될 이벤트의 경우 최대 노출 할 기간 기재 부탁드립니다.","사전예약 관련 이벤트 및 배너는 본 내용에 미기재 되어 있습니다."],"sections":[{"id":"s1","name":"진행중인 이벤트 (모바일 온라인 가입혜택)","note":"* 변경 내용 및 연장 여부 확인 필요. 별도 수정 사항 없으시면 Y 처리만 부탁드립니다.","rows":[{"id":"r1","urgent":false,"cat":"모듈 이벤트","sub":"iPhone 최대 지원금 혜택","checks":[{"label":"운영 기간","at":"2026-11-30T23:59"}],"area":"✦STG: 진행 제외\n✦운영: 82221","extend":"","reply":"","team":"디지털커머스팀","owner":"복다솜","memo":""},{"id":"r2","urgent":false,"cat":"","sub":"iPhone Duo 출시 기념 이벤트","checks":[{"label":"운영 기간","at":"2026-10-26T23:59"}],"area":"✦STG: 2921\n✦운영: 82570","extend":"","reply":"","team":"디지털채널혁신팀","owner":"서효정","memo":""},{"id":"r3","urgent":false,"cat":"모듈 이벤트","sub":"갤럭시 브랜드관","checks":[{"label":"운영 기간","at":"2026-10-31T23:59"}],"area":"✦STG: 진행 제외\n✦운영: 82534","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r4","urgent":false,"cat":"외부 이벤트","sub":"10월 Npay 3,000P 적립!","checks":[{"label":"운영 기간","at":"2026-10-31T23:59"}],"area":"✦STG: 2525\n✦운영: 82203","extend":"","reply":"","team":"디지털그로스마케팅팀","owner":"김정연","memo":""},{"id":"r5","urgent":false,"cat":"(히든) MO·App 전용/ 모듈 이벤트","sub":"갤럭시·iPhone17 시리즈 시크릿 단말 할인 혜택","checks":[{"label":"운영 기간","at":"2026-11-30T23:59"}],"area":"✦STG: 진행 제외\n✦운영: 82571","extend":"","reply":"","team":"디지털커머스팀","owner":"박상인","memo":""},{"id":"r6","urgent":false,"cat":"(히든) MO·App 전용 이벤트","sub":"U+one앱 간편 이용안내","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"✦STG: 2632\n✦운영: 82296","extend":"","reply":"","team":"디지털채널혁신팀","owner":"이민애","memo":""},{"id":"r7","urgent":false,"cat":"","sub":"신분증 인증/안면 인증 추가 안내","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"✦STG: 2593\n✦운영: 82258","extend":"","reply":"","team":"디지털채널혁신팀","owner":"손범열","memo":""},{"id":"r8","urgent":false,"cat":"","sub":"친구 추천 이벤트","checks":[{"label":"운영 기간","at":"2026-12-31T16:59"}],"area":"✦STG: 1307\n✦운영: 81244","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을,복다솜,박상인","memo":""},{"id":"r9","urgent":false,"cat":"","sub":"중고폰 갤럭시 시리즈의 특별혜택","checks":[{"label":"운영 기간","at":"2026-12-31T16:59"}],"area":"✦STG: 239\n✦운영: 239","extend":"","reply":"","team":"디지털커머스팀","owner":"이승민","memo":""}]},{"id":"s2","name":"진행중인 이벤트 (너겟)","note":"* 변경 내용 및 연장 여부 확인 필요. 별도 수정 사항 없으시면 Y 처리만 부탁드립니다.","rows":[{"id":"r10","urgent":false,"cat":"","sub":"10월 너겟 친구 추천 이벤트","checks":[{"label":"운영 기간","at":"2026-10-31T23:59"}],"area":"✦STG: 2597\n✦운영: 82262","extend":"","reply":"","team":"디지털커머스팀","owner":"문지원","memo":""},{"id":"r11","urgent":false,"cat":"","sub":"가입하고 너겟 혜택 받자","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"✦STG: 2026\n✦운영: 81875","extend":"","reply":"","team":"","owner":"","memo":""},{"id":"r12","urgent":false,"cat":"","sub":"온라인 전용 요금제, 너겟","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"✦STG: 2492\n✦운영: 82173","extend":"","reply":"","team":"","owner":"","memo":""}]},{"id":"s3","name":"빌보드 배너","note":"* 변경 내용 및 연장 여부 확인 필요. 별도 수정 사항 없으시면 Y 처리만 부탁드립니다.","rows":[{"id":"r13","urgent":false,"cat":"","sub":"iPhone Duo 애플브랜드관","checks":[{"label":"운영 기간","at":"2026-11-30T23:59"}],"area":"","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r14","urgent":false,"cat":"","sub":"Galaxy Z Foldable 8 최대 혜택","checks":[{"label":"운영 기간","at":"2026-10-31T23:59"}],"area":"","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r15","urgent":false,"cat":"","sub":"(S26기획전)갤럭시 심플하게 더 잘사는 방법!","checks":[{"label":"운영 기간","at":"2026-10-31T23:59"}],"area":"","extend":"","reply":"","team":"디지털커머스팀","owner":"박상인","memo":""},{"id":"r16","urgent":false,"cat":"","sub":"iPhone 18 프로 최대 혜택 앞으로","checks":[{"label":"운영 기간","at":"2026-12-31T16:59"}],"area":"","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r17","urgent":false,"cat":"","sub":"10월 너겟 친구 추천","checks":[{"label":"운영 기간","at":"2026-12-31T16:59"}],"area":"","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""}]},{"id":"s4","name":"이벤트 배너","note":"* 변경 내용 및 연장 여부 확인 필요. 별도 수정 사항 없으시면 Y 처리만 부탁드립니다.","rows":[{"id":"r18","urgent":false,"cat":"","sub":"프리미엄 중고폰","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"","extend":"","reply":"","team":"디지털커머스팀","owner":"유영헌","memo":""}]},{"id":"s5","name":"단말목록 상단 배너","note":"* 변경 내용 및 연장 여부 확인 필요. 별도 수정 사항 없으시면 Y 처리만 부탁드립니다.","rows":[{"id":"r19","urgent":false,"cat":"","sub":"iPhone Duo 애플브랜드관","checks":[{"label":"운영 기간","at":"2026-11-30T23:59"}],"area":"- 노출 영역: 휴대폰/ 태블릿/ 워치","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r20","urgent":false,"cat":"","sub":"Galaxy Z Foldable 8 최대 혜택","checks":[{"label":"운영 기간","at":"2026-10-31T23:59"}],"area":"- 노출 영역: 휴대폰/ 태블릿/ 워치","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r21","urgent":false,"cat":"","sub":"S26 프로모션_갤럭시 심플하게 더 잘사는 방법!","checks":[{"label":"운영 기간","at":"2026-10-31T23:59"}],"area":"- 노출 영역: 휴대폰/ 태블릿/ 워치","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r22","urgent":false,"cat":"","sub":"iPhone 18 프로 최대 혜택 앞으로","checks":[{"label":"운영 기간","at":"2026-12-31T16:59"}],"area":"- 노출 영역: 휴대폰/ 태블릿/ 워치","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r23","urgent":false,"cat":"","sub":"10월 너겟 친구 추천","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"- 노출 영역: 휴대폰/ 태블릿/ 워치","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r24","urgent":false,"cat":"","sub":"휴대폰 지원금 안내","checks":[{"label":"운영 기간","at":"2026-12-31T16:59"}],"area":"- 노출 영역: 태블릿/ 워치","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을,복다솜,박상인","memo":""},{"id":"r25","urgent":false,"cat":"","sub":"신분증 인증/안면 인증 추가 안내","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"- 노출 영역: 휴대폰","extend":"","reply":"","team":"디지털채널혁신팀","owner":"손범열","memo":""},{"id":"r26","urgent":false,"cat":"","sub":"iPad Pro M5 시리즈","checks":[{"label":"운영 기간","at":"2026-12-31T16:59"}],"area":"- 노출 영역: 태블릿","extend":"","reply":"","team":"디지털커머스팀","owner":"최종원","memo":""}]},{"id":"s6","name":"팝업","note":"* 변경 내용 및 연장 여부 확인 필요. 별도 수정 사항 없으시면 Y 처리만 부탁드립니다.","rows":[{"id":"r27","urgent":false,"cat":"","sub":"iPhone Duo 512GB 소진 안내","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"- iPhone Duo 512GB","extend":"","reply":"","team":"","owner":"","memo":""},{"id":"r28","urgent":false,"cat":"","sub":"배송 일주일 이상 지연 안내","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"- iPhone Duo 256GB\n-  iPhone Duo 1TB\n-  iPhone Duo 2TB","extend":"","reply":"","team":"","owner":"","memo":""}]},{"id":"s7","name":"USP 상단 제조사 프로모션","note":"* 변경 내용 및 연장 여부 확인 필요. 별도 수정 사항 없으시면 Y 처리만 부탁드립니다.\n* 연장/종료 티켓에서는 전시 세팅만 관리하며 프로모션 수정 건은 각각의 티켓으로 생성 부탁 드립니다.","rows":[{"id":"r29","urgent":false,"cat":"","sub":"갤럭시 Z 폴더블8","checks":[{"label":"[갤럭시 어텀 페스타] · 스마트태그3 & 케이스 30% 할인 쿠폰  증정 · 구매·개통","at":"2026-10-31T23:59"},{"label":"[갤럭시 어텀 페스타] · 스마트태그3 & 케이스 30% 할인 쿠폰  증정 · 신청","at":"2026-11-30T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 리뷰 작성 및 응모","at":"2026-11-08T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 당첨자 발표","at":"2026-11-18T23:59"},{"label":"[중고폰 최대 10만원 추가보상 혜택] · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[중고폰 최대 10만원 추가보상 혜택] · 추가보상 신청 및 중고기기 반납","at":"2026-10-31T23:59"},{"label":"[초기 구매 혜택] · 단말구매·개통","at":"2026-09-30T23:59"},{"label":"[초기 구매 혜택] · 쿠폰사용","at":"2028-10-31T23:59"},{"label":"[콘텐츠 구독 혜택] · 혜택1) 구글 AI 프로 6개월 구독권 · 단말 구매·개통 및 사용 등록","at":"2027-08-01T23:59"},{"label":"[콘텐츠 구독 혜택] · 혜택2) 윌라 3개월 구독권 · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[콘텐츠 구독 혜택] · 혜택2) 윌라 3개월 구독권 · 쿠폰사용","at":"2026-11-30T23:59"},{"label":"[보호필름 무료 부착 서비스] · 단말구매·개통","at":"2027-07-31T23:59"},{"label":"[보호필름 무료 부착 서비스] · 쿠폰사용","at":"2028-07-31T23:59"},{"label":"[갤럭시 스토어 특별 혜택] · 테마 다운로드","at":"2026-10-31T23:59"}],"area":"- Z Fold8 256GB\n- Z Fold8 512GB\n- Z Fold8 1TB\n- Z Fold8 Ultra 256GB\n- Z Fold8 Ultra 512GB\n- Z Fold8 Ultra 1TB\n- 갤럭시 Z Flip8 256GB\n- 갤럭시 Z Flip8 512GB","extend":"","reply":"","team":"디지털커머스팀","owner":"최종원","memo":""},{"id":"r30","urgent":false,"cat":"","sub":"갤럭시 S26 FE","checks":[{"label":"[갤럭시 어텀 페스타] · 스마트태그3 & 케이스 30% 할인 쿠폰  증정 · 구매·개통","at":"2026-10-31T23:59"},{"label":"[갤럭시 어텀 페스타] · 스마트태그3 & 케이스 30% 할인 쿠폰  증정 · 신청","at":"2026-11-30T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 리뷰 작성 및 응모","at":"2026-11-08T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 당첨자 발표","at":"2026-11-18T23:59"},{"label":"[중고폰 최대 10만원 추가보상 혜택] · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[중고폰 최대 10만원 추가보상 혜택] · 추가보상 신청 및 중고기기 반납","at":"2026-10-31T23:59"},{"label":"[케이스&액세서리 혜택] · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[케이스&액세서리 혜택] · 쿠폰사용","at":"2026-11-30T23:59"},{"label":"[콘텐츠 구독 혜택] · 혜택1) 구글 AI 프로 6개월 구독권 · 단말 구매·개통 및 사용 등록","at":"2027-08-01T23:59"},{"label":"[콘텐츠 구독 혜택] · 혜택2) 윌라 2개월 구독권 · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[콘텐츠 구독 혜택] · 혜택2) 윌라 2개월 구독권 · 사용등록","at":"2026-12-31T23:59"}],"area":"- 갤럭시 S26 FE","extend":"","reply":"","team":"디지털커머스팀","owner":"최종원","memo":""},{"id":"r31","urgent":false,"cat":"","sub":"S26 시리즈","checks":[{"label":"[갤럭시 어텀 페스타] · 스마트태그3 & 케이스 30% 할인 쿠폰  증정 · 구매·개통","at":"2026-10-31T23:59"},{"label":"[갤럭시 어텀 페스타] · 스마트태그3 & 케이스 30% 할인 쿠폰  증정 · 신청","at":"2026-11-30T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 리뷰 작성 및 응모","at":"2026-11-08T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 당첨자 발표","at":"2026-11-18T23:59"},{"label":"[중고폰 최대 10만원 추가보상 혜택] · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[중고폰 최대 10만원 추가보상 혜택] · 추가보상 신청 및 중고기기 반납","at":"2026-10-31T23:59"}],"area":"-S26+ 256GB\n- S26+ 512GB\n- S26 256GB\n- S26 512GB\n- S26 U 256GB\n- S26 U 512GB\n- S26 U 1TB","extend":"","reply":"","team":"디지털커머스팀","owner":"최종원","memo":""},{"id":"r32","urgent":false,"cat":"","sub":"갤럭시 A37 5G","checks":[{"label":"[구매 혜택] · 윌라 2개월 구독권 · 단말구매","at":"2026-09-30T23:59"},{"label":"[구매 혜택] · 윌라 2개월 구독권 · 사용등록","at":"2026-10-31T23:59"}],"area":"https://www.lguplus.com/mobile/device/samsung/galaxy-a37/SM-A376N","extend":"","reply":"","team":"디지털커머스팀","owner":"최종원","memo":""},{"id":"r33","urgent":false,"cat":"","sub":"키즈폰 무너에디션2","checks":[{"label":"[무너폰2의 스페셜 혜택] · 이벤트1) 교보라플 키즈 케어보험 1년 무료 보장 · 기간","at":"2026-12-31T23:59"},{"label":"[무너폰2의 스페셜 혜택] · 이벤트2) 하나은행 아이부자 7천원 용돈 · 기간","at":"2026-12-31T23:59"}],"area":"https://www.lguplus.com/mobile/device/samsung/uplus-kidsphone-mooner-2/SM-A175N-M2","extend":"","reply":"","team":"디지털커머스팀","owner":"최종원","memo":""},{"id":"r34","urgent":false,"cat":"","sub":"갤럭시 워치 Ultra2","checks":[{"label":"[갤럭시 워치 울트라2 ｜워치9 구매혜택] · 론칭 구매 혜택1) 워치 밴드 할인 쿠폰 증정 · 구매 기간","at":"2026-08-31T23:59"},{"label":"[갤럭시 워치 울트라2 ｜워치9 구매혜택] · 론칭 구매 혜택1) 워치 밴드 할인 쿠폰 증정 · 쿠폰 신청 및 사용 기간","at":"2026-09-30T23:59"},{"label":"[갤럭시 워치 울트라2 ｜워치9 구매혜택] · 론칭 구매 혜택2) 타임플릭 워치페이스 6개월 이용권 증정 · 쿠폰 다운로드 기간","at":"2026-09-30T23:59"},{"label":"[갤럭시 워치 울트라2 ｜워치9 구매혜택] · 론칭 구매 혜택2) 타임플릭 워치페이스 6개월 이용권 증정 · 쿠폰 등록 기간","at":"2026-12-31T23:59"},{"label":"[갤럭시 워치 울트라2 ｜워치9 구매혜택] · 구매자 혜택 리뷰) 워꾸 챌린지 · 챌린지 인증 기간","at":"2026-09-14T23:59"},{"label":"[갤럭시 워치 울트라2 ｜워치9 구매혜택] · 구매자 혜택 리뷰) 워꾸 챌린지 · 혜택 당첨 발표일","at":"2026-09-21T23:59"}],"area":"- 갤럭시 워치 Ultra2\n- 갤럭시 워치9 44mm\n- 갤럭시 워치9 40mm","extend":"","reply":"","team":"디지털커머스팀","owner":"최종원","memo":""},{"id":"r35","urgent":false,"cat":"","sub":"갤럭시 탭 S12 Ultra","checks":[{"label":"[런칭 스페셜 혜택] · 혜택2) · 기간","at":"2026-08-01T23:59"},{"label":"[런칭 스페셜 혜택] · 혜택3) · 기간","at":"2026-10-31T23:59"},{"label":"[런칭 스페셜 혜택] · 혜택3) · 등록","at":"2026-11-08T23:59"},{"label":"[정품 액세서리 할인 혜택] · 구매","at":"2026-10-31T23:59"},{"label":"[정품 액세서리 할인 혜택] · 신청","at":"2026-11-08T23:59"}],"area":"- 갤럭시 탭 S12 Ultra\n- 갤럭시 탭 S12+","extend":"","reply":"","team":"디지털커머스팀","owner":"최종원","memo":""}]}]}</script>
+<script type="application/json" id="seedData">{"title":"진행 중인 이벤트 연장, 종료 확인 건","notices":["장기 프로모션은 최대 노출 기간을 기재해주세요.","사전예약 관련 이벤트 및 배너는 테이블에 기재하지 않습니다."],"sections":[{"id":"s1","name":"진행중인 이벤트 (모바일 온라인 가입혜택)","note":"* 변경 내용 및 연장 여부 확인 필요. 별도 수정 사항 없으시면 Y 처리만 부탁드립니다.","rows":[{"id":"r1","urgent":false,"cat":"모듈 이벤트","sub":"iPhone 최대 지원금 혜택","checks":[{"label":"운영 기간","at":"2026-11-30T23:59"}],"area":"✦STG: 진행 제외\n✦운영: 82221","extend":"","reply":"","team":"디지털커머스팀","owner":"복다솜","memo":""},{"id":"r2","urgent":false,"cat":"","sub":"iPhone Duo 출시 기념 이벤트","checks":[{"label":"운영 기간","at":"2026-10-26T23:59"}],"area":"✦STG: 2921\n✦운영: 82570","extend":"","reply":"","team":"디지털채널혁신팀","owner":"서효정","memo":""},{"id":"r3","urgent":false,"cat":"모듈 이벤트","sub":"갤럭시 브랜드관","checks":[{"label":"운영 기간","at":"2026-10-31T23:59"}],"area":"✦STG: 진행 제외\n✦운영: 82534","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r4","urgent":false,"cat":"외부 이벤트","sub":"10월 Npay 3,000P 적립!","checks":[{"label":"운영 기간","at":"2026-10-31T23:59"}],"area":"✦STG: 2525\n✦운영: 82203","extend":"","reply":"","team":"디지털그로스마케팅팀","owner":"김정연","memo":""},{"id":"r5","urgent":false,"cat":"(히든) MO·App 전용/ 모듈 이벤트","sub":"갤럭시·iPhone17 시리즈 시크릿 단말 할인 혜택","checks":[{"label":"운영 기간","at":"2026-11-30T23:59"}],"area":"✦STG: 진행 제외\n✦운영: 82571","extend":"","reply":"","team":"디지털커머스팀","owner":"박상인","memo":""},{"id":"r6","urgent":false,"cat":"(히든) MO·App 전용 이벤트","sub":"U+one앱 간편 이용안내","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"✦STG: 2632\n✦운영: 82296","extend":"","reply":"","team":"디지털채널혁신팀","owner":"이민애","memo":""},{"id":"r7","urgent":false,"cat":"","sub":"신분증 인증/안면 인증 추가 안내","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"✦STG: 2593\n✦운영: 82258","extend":"","reply":"","team":"디지털채널혁신팀","owner":"손범열","memo":""},{"id":"r8","urgent":false,"cat":"","sub":"친구 추천 이벤트","checks":[{"label":"운영 기간","at":"2026-12-31T16:59"}],"area":"✦STG: 1307\n✦운영: 81244","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을,복다솜,박상인","memo":""},{"id":"r9","urgent":false,"cat":"","sub":"중고폰 갤럭시 시리즈의 특별혜택","checks":[{"label":"운영 기간","at":"2026-12-31T16:59"}],"area":"✦STG: 239\n✦운영: 239","extend":"","reply":"","team":"디지털커머스팀","owner":"이승민","memo":""}]},{"id":"s2","name":"진행중인 이벤트 (너겟)","note":"* 변경 내용 및 연장 여부 확인 필요. 별도 수정 사항 없으시면 Y 처리만 부탁드립니다.","rows":[{"id":"r10","urgent":false,"cat":"","sub":"10월 너겟 친구 추천 이벤트","checks":[{"label":"운영 기간","at":"2026-10-31T23:59"}],"area":"✦STG: 2597\n✦운영: 82262","extend":"","reply":"","team":"디지털커머스팀","owner":"문지원","memo":""},{"id":"r11","urgent":false,"cat":"","sub":"가입하고 너겟 혜택 받자","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"✦STG: 2026\n✦운영: 81875","extend":"","reply":"","team":"","owner":"","memo":""},{"id":"r12","urgent":false,"cat":"","sub":"온라인 전용 요금제, 너겟","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"✦STG: 2492\n✦운영: 82173","extend":"","reply":"","team":"","owner":"","memo":""}]},{"id":"s3","name":"빌보드 배너","note":"* 변경 내용 및 연장 여부 확인 필요. 별도 수정 사항 없으시면 Y 처리만 부탁드립니다.","rows":[{"id":"r13","urgent":false,"cat":"","sub":"iPhone Duo 애플브랜드관","checks":[{"label":"운영 기간","at":"2026-11-30T23:59"}],"area":"","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r14","urgent":false,"cat":"","sub":"Galaxy Z Foldable 8 최대 혜택","checks":[{"label":"운영 기간","at":"2026-10-31T23:59"}],"area":"","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r15","urgent":false,"cat":"","sub":"(S26기획전)갤럭시 심플하게 더 잘사는 방법!","checks":[{"label":"운영 기간","at":"2026-10-31T23:59"}],"area":"","extend":"","reply":"","team":"디지털커머스팀","owner":"박상인","memo":""},{"id":"r16","urgent":false,"cat":"","sub":"iPhone 18 프로 최대 혜택 앞으로","checks":[{"label":"운영 기간","at":"2026-12-31T16:59"}],"area":"","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r17","urgent":false,"cat":"","sub":"10월 너겟 친구 추천","checks":[{"label":"운영 기간","at":"2026-12-31T16:59"}],"area":"","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""}]},{"id":"s4","name":"이벤트 배너","note":"* 변경 내용 및 연장 여부 확인 필요. 별도 수정 사항 없으시면 Y 처리만 부탁드립니다.","rows":[{"id":"r18","urgent":false,"cat":"","sub":"프리미엄 중고폰","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"","extend":"","reply":"","team":"디지털커머스팀","owner":"유영헌","memo":""}]},{"id":"s5","name":"단말목록 상단 배너","note":"* 변경 내용 및 연장 여부 확인 필요. 별도 수정 사항 없으시면 Y 처리만 부탁드립니다.","rows":[{"id":"r19","urgent":false,"cat":"","sub":"iPhone Duo 애플브랜드관","checks":[{"label":"운영 기간","at":"2026-11-30T23:59"}],"area":"- 노출 영역: 휴대폰/ 태블릿/ 워치","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r20","urgent":false,"cat":"","sub":"Galaxy Z Foldable 8 최대 혜택","checks":[{"label":"운영 기간","at":"2026-10-31T23:59"}],"area":"- 노출 영역: 휴대폰/ 태블릿/ 워치","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r21","urgent":false,"cat":"","sub":"S26 프로모션_갤럭시 심플하게 더 잘사는 방법!","checks":[{"label":"운영 기간","at":"2026-10-31T23:59"}],"area":"- 노출 영역: 휴대폰/ 태블릿/ 워치","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r22","urgent":false,"cat":"","sub":"iPhone 18 프로 최대 혜택 앞으로","checks":[{"label":"운영 기간","at":"2026-12-31T16:59"}],"area":"- 노출 영역: 휴대폰/ 태블릿/ 워치","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r23","urgent":false,"cat":"","sub":"10월 너겟 친구 추천","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"- 노출 영역: 휴대폰/ 태블릿/ 워치","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을","memo":""},{"id":"r24","urgent":false,"cat":"","sub":"휴대폰 지원금 안내","checks":[{"label":"운영 기간","at":"2026-12-31T16:59"}],"area":"- 노출 영역: 태블릿/ 워치","extend":"","reply":"","team":"디지털커머스팀","owner":"문가을,복다솜,박상인","memo":""},{"id":"r25","urgent":false,"cat":"","sub":"신분증 인증/안면 인증 추가 안내","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"- 노출 영역: 휴대폰","extend":"","reply":"","team":"디지털채널혁신팀","owner":"손범열","memo":""},{"id":"r26","urgent":false,"cat":"","sub":"iPad Pro M5 시리즈","checks":[{"label":"운영 기간","at":"2026-12-31T16:59"}],"area":"- 노출 영역: 태블릿","extend":"","reply":"","team":"디지털커머스팀","owner":"최종원","memo":""}]},{"id":"s6","name":"팝업","note":"* 변경 내용 및 연장 여부 확인 필요. 별도 수정 사항 없으시면 Y 처리만 부탁드립니다.","rows":[{"id":"r27","urgent":false,"cat":"","sub":"iPhone Duo 512GB 소진 안내","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"- iPhone Duo 512GB","extend":"","reply":"","team":"","owner":"","memo":""},{"id":"r28","urgent":false,"cat":"","sub":"배송 일주일 이상 지연 안내","checks":[{"label":"운영 기간","at":"2026-12-31T23:59"}],"area":"- iPhone Duo 256GB\n-  iPhone Duo 1TB\n-  iPhone Duo 2TB","extend":"","reply":"","team":"","owner":"","memo":""}]},{"id":"s7","name":"USP 상단 제조사 프로모션","note":"* 변경 내용 및 연장 여부 확인 필요. 별도 수정 사항 없으시면 Y 처리만 부탁드립니다.\n* 연장/종료 티켓에서는 전시 세팅만 관리하며 프로모션 수정 건은 각각의 티켓으로 생성 부탁 드립니다.","rows":[{"id":"r29","urgent":false,"cat":"","sub":"갤럭시 Z 폴더블8","checks":[{"label":"[갤럭시 어텀 페스타] · 스마트태그3 & 케이스 30% 할인 쿠폰  증정 · 구매·개통","at":"2026-10-31T23:59"},{"label":"[갤럭시 어텀 페스타] · 스마트태그3 & 케이스 30% 할인 쿠폰  증정 · 신청","at":"2026-11-30T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 리뷰 작성 및 응모","at":"2026-11-08T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 당첨자 발표","at":"2026-11-18T23:59"},{"label":"[중고폰 최대 10만원 추가보상 혜택] · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[중고폰 최대 10만원 추가보상 혜택] · 추가보상 신청 및 중고기기 반납","at":"2026-10-31T23:59"},{"label":"[초기 구매 혜택] · 단말구매·개통","at":"2026-09-30T23:59"},{"label":"[초기 구매 혜택] · 쿠폰사용","at":"2028-10-31T23:59"},{"label":"[콘텐츠 구독 혜택] · 혜택1) 구글 AI 프로 6개월 구독권 · 단말 구매·개통 및 사용 등록","at":"2027-08-01T23:59"},{"label":"[콘텐츠 구독 혜택] · 혜택2) 윌라 3개월 구독권 · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[콘텐츠 구독 혜택] · 혜택2) 윌라 3개월 구독권 · 쿠폰사용","at":"2026-11-30T23:59"},{"label":"[보호필름 무료 부착 서비스] · 단말구매·개통","at":"2027-07-31T23:59"},{"label":"[보호필름 무료 부착 서비스] · 쿠폰사용","at":"2028-07-31T23:59"},{"label":"[갤럭시 스토어 특별 혜택] · 테마 다운로드","at":"2026-10-31T23:59"}],"area":"- Z Fold8 256GB\n- Z Fold8 512GB\n- Z Fold8 1TB\n- Z Fold8 Ultra 256GB\n- Z Fold8 Ultra 512GB\n- Z Fold8 Ultra 1TB\n- 갤럭시 Z Flip8 256GB\n- 갤럭시 Z Flip8 512GB","extend":"","reply":"","team":"디지털커머스팀","owner":"최종원","memo":""},{"id":"r30","urgent":false,"cat":"","sub":"갤럭시 S26 FE","checks":[{"label":"[갤럭시 어텀 페스타] · 스마트태그3 & 케이스 30% 할인 쿠폰  증정 · 구매·개통","at":"2026-10-31T23:59"},{"label":"[갤럭시 어텀 페스타] · 스마트태그3 & 케이스 30% 할인 쿠폰  증정 · 신청","at":"2026-11-30T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 리뷰 작성 및 응모","at":"2026-11-08T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 당첨자 발표","at":"2026-11-18T23:59"},{"label":"[중고폰 최대 10만원 추가보상 혜택] · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[중고폰 최대 10만원 추가보상 혜택] · 추가보상 신청 및 중고기기 반납","at":"2026-10-31T23:59"},{"label":"[케이스&액세서리 혜택] · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[케이스&액세서리 혜택] · 쿠폰사용","at":"2026-11-30T23:59"},{"label":"[콘텐츠 구독 혜택] · 혜택1) 구글 AI 프로 6개월 구독권 · 단말 구매·개통 및 사용 등록","at":"2027-08-01T23:59"},{"label":"[콘텐츠 구독 혜택] · 혜택2) 윌라 2개월 구독권 · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[콘텐츠 구독 혜택] · 혜택2) 윌라 2개월 구독권 · 사용등록","at":"2026-12-31T23:59"}],"area":"- 갤럭시 S26 FE","extend":"","reply":"","team":"디지털커머스팀","owner":"최종원","memo":""},{"id":"r31","urgent":false,"cat":"","sub":"S26 시리즈","checks":[{"label":"[갤럭시 어텀 페스타] · 스마트태그3 & 케이스 30% 할인 쿠폰  증정 · 구매·개통","at":"2026-10-31T23:59"},{"label":"[갤럭시 어텀 페스타] · 스마트태그3 & 케이스 30% 할인 쿠폰  증정 · 신청","at":"2026-11-30T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 리뷰 작성 및 응모","at":"2026-11-08T23:59"},{"label":"[갤럭시 리뷰 챌린지] · 당첨자 발표","at":"2026-11-18T23:59"},{"label":"[중고폰 최대 10만원 추가보상 혜택] · 단말구매·개통","at":"2026-10-31T23:59"},{"label":"[중고폰 최대 10만원 추가보상 혜택] · 추가보상 신청 및 중고기기 반납","at":"2026-10-31T23:59"}],"area":"-S26+ 256GB\n- S26+ 512GB\n- S26 256GB\n- S26 512GB\n- S26 U 256GB\n- S26 U 512GB\n- S26 U 1TB","extend":"","reply":"","team":"디지털커머스팀","owner":"최종원","memo":""},{"id":"r32","urgent":false,"cat":"","sub":"갤럭시 A37 5G","checks":[{"label":"[구매 혜택] · 윌라 2개월 구독권 · 단말구매","at":"2026-09-30T23:59"},{"label":"[구매 혜택] · 윌라 2개월 구독권 · 사용등록","at":"2026-10-31T23:59"}],"area":"https://www.lguplus.com/mobile/device/samsung/galaxy-a37/SM-A376N","extend":"","reply":"","team":"디지털커머스팀","owner":"최종원","memo":""},{"id":"r33","urgent":false,"cat":"","sub":"키즈폰 무너에디션2","checks":[{"label":"[무너폰2의 스페셜 혜택] · 이벤트1) 교보라플 키즈 케어보험 1년 무료 보장 · 기간","at":"2026-12-31T23:59"},{"label":"[무너폰2의 스페셜 혜택] · 이벤트2) 하나은행 아이부자 7천원 용돈 · 기간","at":"2026-12-31T23:59"}],"area":"https://www.lguplus.com/mobile/device/samsung/uplus-kidsphone-mooner-2/SM-A175N-M2","extend":"","reply":"","team":"디지털커머스팀","owner":"최종원","memo":""},{"id":"r34","urgent":false,"cat":"","sub":"갤럭시 워치 Ultra2","checks":[{"label":"[갤럭시 워치 울트라2 ｜워치9 구매혜택] · 론칭 구매 혜택1) 워치 밴드 할인 쿠폰 증정 · 구매 기간","at":"2026-08-31T23:59"},{"label":"[갤럭시 워치 울트라2 ｜워치9 구매혜택] · 론칭 구매 혜택1) 워치 밴드 할인 쿠폰 증정 · 쿠폰 신청 및 사용 기간","at":"2026-09-30T23:59"},{"label":"[갤럭시 워치 울트라2 ｜워치9 구매혜택] · 론칭 구매 혜택2) 타임플릭 워치페이스 6개월 이용권 증정 · 쿠폰 다운로드 기간","at":"2026-09-30T23:59"},{"label":"[갤럭시 워치 울트라2 ｜워치9 구매혜택] · 론칭 구매 혜택2) 타임플릭 워치페이스 6개월 이용권 증정 · 쿠폰 등록 기간","at":"2026-12-31T23:59"},{"label":"[갤럭시 워치 울트라2 ｜워치9 구매혜택] · 구매자 혜택 리뷰) 워꾸 챌린지 · 챌린지 인증 기간","at":"2026-09-14T23:59"},{"label":"[갤럭시 워치 울트라2 ｜워치9 구매혜택] · 구매자 혜택 리뷰) 워꾸 챌린지 · 혜택 당첨 발표일","at":"2026-09-21T23:59"}],"area":"- 갤럭시 워치 Ultra2\n- 갤럭시 워치9 44mm\n- 갤럭시 워치9 40mm","extend":"","reply":"","team":"디지털커머스팀","owner":"최종원","memo":""},{"id":"r35","urgent":false,"cat":"","sub":"갤럭시 탭 S12 Ultra","checks":[{"label":"[런칭 스페셜 혜택] · 혜택2) · 기간","at":"2026-08-01T23:59"},{"label":"[런칭 스페셜 혜택] · 혜택3) · 기간","at":"2026-10-31T23:59"},{"label":"[런칭 스페셜 혜택] · 혜택3) · 등록","at":"2026-11-08T23:59"},{"label":"[정품 액세서리 할인 혜택] · 구매","at":"2026-10-31T23:59"},{"label":"[정품 액세서리 할인 혜택] · 신청","at":"2026-11-08T23:59"}],"area":"- 갤럭시 탭 S12 Ultra\n- 갤럭시 탭 S12+","extend":"","reply":"","team":"디지털커머스팀","owner":"최종원","memo":""}]}]}</script>
 <script>
 (function(){
   "use strict";
@@ -465,9 +479,9 @@
 
   var T_SEC = "eec_sections", T_ROW = "eec_rows";
   var SEC_COLS = ["sort_order", "name", "note"];
-  var ROW_COLS = ["sort_order", "urgent", "cat", "sub", "checks", "area", "extend", "reply", "team", "owner", "memo"];
+  var ROW_COLS = ["sort_order", "urgent", "cat", "sub", "checks", "area", "extend", "reply", "team", "owner", "owner_ok", "memo"];
   var STORAGE_KEY = "event-extension-check:v1";
-  var COLS = 12;
+  var COLS = 14;
 
   var SEED = JSON.parse(document.getElementById("seedData").textContent);
   var state = { title: SEED.title, notices: SEED.notices, sections: [] };
@@ -502,7 +516,7 @@
   }
   function blankRow(order){
     return { id: uid("r"), sort_order: order || 0, urgent:false, cat:"", sub:"", checks:[blankCheck()],
-             area:"", extend:"", reply:"", team:"", owner:"", memo:"" };
+             area:"", extend:"", reply:"", team:"", owner:"", owner_ok:false, memo:"" };
   }
 
   // ---------- 확인 사항: 구분 + 일시 ----------
@@ -930,7 +944,7 @@
       });
     });
     var items = [
-      ["", "전체", total], ["urgent", "마감 임박", urgent],
+      ["", "전체", total], ["urgent", "체크", urgent],
       ["y", "연장 Y", y], ["n", "연장 N", n], ["", "미회신", total - y - n]
     ];
     document.getElementById("summary").innerHTML = items.map(function(it){
@@ -960,7 +974,8 @@
   function rowHTML(sec, r, idx){
     var name = "ext-" + r.id;
     return '<tr class="item' + (r.urgent ? " is-urgent" : "") + '" data-row="' + r.id + '">' +
-      '<td class="c-center"><label class="urgent-box" title="마감 임박 표시"><input type="checkbox" data-field="urgent"' + (r.urgent ? " checked" : "") + '><span class="visually-hidden">마감 임박</span></label></td>' +
+      '<td class="row-no">' + (rowNumbers[r.id] || "") + "</td>" +
+      '<td class="c-center"><label class="urgent-box" title="체크 표시"><input type="checkbox" data-field="urgent"' + (r.urgent ? " checked" : "") + '><span class="visually-hidden">체크</span></label></td>' +
       '<td class="g-start g-tint"><textarea class="cell-input" rows="1" data-field="cat" placeholder="대분류" aria-label="이벤트 및 단말 대분류">' + esc(r.cat) + "</textarea></td>" +
       '<td class="g-tint"><textarea class="cell-input cell-input--strong" rows="1" data-field="sub" placeholder="소분류" aria-label="이벤트 및 단말 소분류">' + esc(r.sub) + "</textarea></td>" +
       '<td colspan="2" class="g-start"><div class="checks">' + r.checks.map(checkHTML).join("") +
@@ -973,6 +988,7 @@
       '<td><textarea class="cell-input" rows="1" data-field="reply" placeholder="연장/종료/추가 내용" aria-label="추가 내용 기재">' + esc(r.reply) + "</textarea></td>" +
       '<td class="g-start g-tint"><textarea class="cell-input" rows="1" data-field="team" placeholder="팀" aria-label="요청자 팀">' + esc(r.team) + "</textarea></td>" +
       '<td class="g-tint"><textarea class="cell-input" rows="1" data-field="owner" placeholder="담당자" aria-label="요청자 담당자">' + esc(r.owner) + "</textarea></td>" +
+      '<td class="g-tint c-center"><label class="check-box" title="담당자 확인"><input type="checkbox" data-field="owner_ok"' + (r.owner_ok ? " checked" : "") + '><span class="visually-hidden">담당자 확인</span></label></td>' +
       '<td class="g-start"><textarea class="cell-input cell-input--sm" rows="1" data-field="memo" placeholder="비고" aria-label="비고">' + esc(r.memo) + "</textarea></td>" +
       '<td class="g-start"><div class="row-actions">' +
         '<button type="button" class="btn btn--icon btn--icon--xs" data-action="row-up" aria-label="위로 이동"' + (idx === 0 ? " disabled" : "") + ">" + icon("up") + "</button>" +
@@ -1002,12 +1018,22 @@
       "</div></th></tr>" + body + "</tbody>";
   }
 
+  // No. runs 1..n across every section in display order, like the sheet's own column;
+  // the 체크 filter hides rows but keeps their numbers.
+  var rowNumbers = {};
+  function numberRows(){
+    var n = 0;
+    rowNumbers = {};
+    state.sections.forEach(function(s){ s.rows.forEach(function(r){ rowNumbers[r.id] = ++n; }); });
+  }
+
   function render(){
+    numberRows();
     Array.prototype.forEach.call(sheet.querySelectorAll("tbody"), function(tb){ tb.remove(); });
     var html = state.sections.map(sectionHTML).join("");
     if(!html){
       html = '<tbody><tr class="empty-row"><td colspan="' + COLS + '">' +
-        (onlyUrgent ? "마감 임박으로 표시된 항목이 없습니다." : "구분이 없습니다. ‘구분 추가’로 시작하세요.") + "</td></tr></tbody>";
+        (onlyUrgent ? "체크로 표시된 항목이 없습니다." : "구분이 없습니다. ‘구분 추가’로 시작하세요.") + "</td></tr></tbody>";
     }
     sheet.insertAdjacentHTML("beforeend", html);
     autosizeAll();
@@ -1072,6 +1098,7 @@
     var active = document.activeElement;
     tr.classList.toggle("is-urgent", !!row.urgent);
     tr.querySelector('[data-field="urgent"]').checked = !!row.urgent;
+    tr.querySelector('[data-field="owner_ok"]').checked = !!row.owner_ok;
     tr.querySelectorAll('[data-field="extend"]').forEach(function(r){ r.checked = r.value === row.extend; });
     // The focused cell is left alone; if it now disagrees with the saved value, refresh it on blur.
     tr.querySelectorAll("textarea[data-field]").forEach(function(el){
@@ -1193,6 +1220,9 @@
       c.row.extend = el.value;
       store.rowChanged(c.row, ["extend"]);
       renderSummary();
+    }else if(el.dataset.field === "owner_ok"){
+      c.row.owner_ok = el.checked;
+      store.rowChanged(c.row, ["owner_ok"]);
     }
   });
 

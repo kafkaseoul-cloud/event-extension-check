@@ -28,10 +28,14 @@ create table if not exists eec_rows (
   reply       text not null default '',                -- 추가 내용 기재
   team        text not null default '',                -- 요청자 · 팀
   owner       text not null default '',                -- 요청자 · 담당자
-  memo        text not null default '',                -- 비고
+  owner_ok    boolean not null default false,          -- 요청자 · 담당자 확인
+  memo       text not null default '',                -- 비고
   updated_at  timestamptz not null default now()
 );
 create index if not exists eec_rows_section_idx on eec_rows(section_id);
+
+-- 나중에 추가된 칸: 이 스크립트 이전 버전으로 만든 테이블에도 붙도록 따로 추가한다.
+alter table eec_rows add column if not exists owner_ok boolean not null default false;
 
 -- updated_at 자동 갱신
 create or replace function eec_touch() returns trigger language plpgsql as $$

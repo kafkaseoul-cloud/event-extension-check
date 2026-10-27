@@ -45,6 +45,11 @@
     --urgent-bg-hover: oklch(93% 0.13 100);
     --urgent-edge: oklch(80% 0.16 95);
 
+    /* Column-group banding in the sheet. */
+    --col-tint: oklch(97.6% 0.009 256);
+    --col-tint-head: oklch(94.8% 0.016 256);
+    --group-line: oklch(80% 0.018 256);
+
     --radius: 14px;
     --radius-md: 8px;
     --radius-sm: 6px;
@@ -177,12 +182,22 @@
     text-align:left; font-size:0.75rem; font-weight:600; color: var(--muted-80);
     padding: 7px 10px; border-bottom:1px solid var(--hairline); white-space:nowrap;
   }
-  .sheet thead tr:first-child th{ top:0; }
-  .sheet thead tr:nth-child(2) th{ top: 33px; font-size:11px; color: var(--muted); font-weight:500; }
-  .sheet thead th[rowspan]{ vertical-align: bottom; }
-  .sheet thead th.th-group{ text-align:center; border-bottom-color: var(--divider); }
+  .sheet thead tr:first-child th{
+    top:0; height:34px; text-align:center; vertical-align:middle;
+    font-size:0.8125rem; color: var(--text);
+  }
+  .sheet thead tr:nth-child(2) th{ top: 34px; font-size:11px; color: var(--muted); font-weight:500; }
+  .sheet thead th.th-group{ border-bottom-color: var(--divider); }
   .sheet thead th + th{ border-left:1px solid var(--divider); }
   .sheet thead tr:nth-child(2) th{ border-left:1px solid var(--divider); }
+
+  /* Column groups (이벤트 및 단말 / 확인 사항 / 적용 영역 / 사업 피드백 작성 / 요청자 / 비고):
+     a firmer rule where each group starts, and every other group carries a faint tint
+     down the whole column so the blocks read apart at a glance. */
+  .sheet thead th.g-tint{ background: var(--col-tint-head); }
+  .sheet td.g-tint{ background: var(--col-tint); }
+  .sheet thead tr th.g-start,
+  .sheet tbody tr td.g-start{ border-left:1px solid var(--group-line); }
 
   .sheet td{
     padding: 4px 6px; border-bottom:1px solid var(--divider); vertical-align:top;
@@ -250,8 +265,22 @@
   .checks{ display:flex; flex-direction:column; gap:2px; }
   .check{ display:grid; grid-template-columns: minmax(0,1fr) 270px; gap: 6px; align-items:start; }
   .check + .check{ border-top:1px dashed var(--divider); padding-top:2px; }
+  .check__kind{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .check.is-preset .check__kind textarea{ display:none; }
+  select.cell-select{
+    align-self:flex-start; width:auto; height:28px; padding: 0 24px 0 6px; font-size:0.75rem; font-weight:600; cursor:pointer;
+    appearance:none; -webkit-appearance:none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2346536b' stroke-width='1.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position: right 8px center;
+  }
+  .check.is-preset select.cell-select{ color: var(--muted-80); }
   .check__when{ display:flex; align-items:center; gap:4px; }
-  .check__when input{ flex:1; }
+  .check__when input.cell-date{ flex: 1 1 auto; }
+  input.cell-time{
+    flex: 0 0 52px; width:52px; height:28px; padding: 0 4px; text-align:center;
+    font-family: var(--font-mono); font-size:0.75rem; font-variant-numeric: tabular-nums;
+  }
+  input.cell-time[aria-invalid="true"]{ border-color: var(--error); background: var(--error-soft); }
   .dday{
     font-family: var(--font-mono); font-size:10.5px; font-weight:600; padding: 1px 5px; border-radius:4px;
     white-space:nowrap; min-width: 40px; text-align:center;
@@ -380,23 +409,24 @@
       </colgroup>
       <thead>
         <tr>
-          <th rowspan="2" class="c-center">임박</th>
-          <th colspan="2" class="th-group">이벤트 및 단말</th>
-          <th colspan="2" class="th-group">확인 사항</th>
-          <th rowspan="2">적용 영역</th>
-          <th rowspan="2" class="c-center">기간 연장</th>
-          <th rowspan="2">추가 내용 기재</th>
-          <th colspan="2" class="th-group">요청자</th>
-          <th rowspan="2">비고</th>
-          <th rowspan="2"><span class="visually-hidden">행 관리</span></th>
+          <th rowspan="2">임박</th>
+          <th colspan="2" class="th-group g-start g-tint">이벤트 및 단말</th>
+          <th colspan="2" class="th-group g-start">확인 사항</th>
+          <th rowspan="2" class="g-start g-tint">적용 영역</th>
+          <th colspan="2" class="th-group g-start">사업 피드백 작성</th>
+          <th colspan="2" class="th-group g-start g-tint">요청자</th>
+          <th rowspan="2" class="g-start">비고</th>
+          <th rowspan="2" class="g-start"><span class="visually-hidden">행 관리</span></th>
         </tr>
         <tr>
-          <th>대분류</th>
-          <th>소분류</th>
-          <th>대분류</th>
-          <th>일시</th>
-          <th>팀</th>
-          <th>담당자</th>
+          <th class="g-start g-tint">대분류</th>
+          <th class="g-tint">소분류</th>
+          <th class="g-start">구분</th>
+          <th>일시 (24시)</th>
+          <th class="g-start c-center">기간 연장</th>
+          <th>추가 내용 기재</th>
+          <th class="g-start g-tint">팀</th>
+          <th class="g-tint">담당자</th>
         </tr>
       </thead>
     </table>
@@ -471,8 +501,34 @@
     return null;
   }
   function blankRow(order){
-    return { id: uid("r"), sort_order: order || 0, urgent:false, cat:"", sub:"", checks:[{ label:"", at:"" }],
+    return { id: uid("r"), sort_order: order || 0, urgent:false, cat:"", sub:"", checks:[blankCheck()],
              area:"", extend:"", reply:"", team:"", owner:"", memo:"" };
+  }
+
+  // ---------- 확인 사항: 구분 + 일시 ----------
+  // A check stores only { label, at }. 구분 is "운영 기간" (the common case, picked from the
+  // select) or free text; at is "YYYY-MM-DDTHH:MM" in 24-hour time, split into a native date
+  // picker and a typed HH:MM field because datetime-local renders 오전/오후 in Korean locales.
+  var PRESET_LABEL = "운영 기간";
+  var DEFAULT_TIME = "23:59";
+  function blankCheck(){ return { label: PRESET_LABEL, at: "" }; }
+  function checkKind(c){ return c.label === PRESET_LABEL ? "preset" : "custom"; }
+  function splitAt(at){
+    var m = /^(\d{4}-\d{2}-\d{2})(?:T(\d{2}:\d{2}))?/.exec(at || "");
+    return m ? { date: m[1], time: m[2] || "" } : { date: "", time: "" };
+  }
+  function cellValue(c, cfield){
+    if(cfield === "kind"){ return checkKind(c); }
+    if(cfield === "label"){ return checkKind(c) === "preset" ? "" : c.label; }
+    return splitAt(c.at)[cfield] || "";
+  }
+  function isTime(t){ return /^([01]\d|2[0-3]):[0-5]\d$/.test(t); }
+  // Digits in, "HH:MM" out — "2359" → "23:59", "9:30" → "09:30".
+  function maskTime(v){
+    v = v.replace(/[^\d:]/g, "");
+    if(/^\d:/.test(v)){ v = "0" + v; }
+    var d = v.replace(/:/g, "").slice(0, 4);
+    return d.length > 2 ? d.slice(0, 2) + ":" + d.slice(2) : d;
   }
 
   // Fill in any missing fields and order everything by sort_order — used for seed, local save and imports.
@@ -883,11 +939,18 @@
   }
 
   function checkHTML(c, i){
-    var d = dday(c.at);
-    return '<div class="check" data-check="' + i + '">' +
-      '<textarea class="cell-input cell-input--sm" rows="1" data-cfield="label" placeholder="대분류 직접 입력" aria-label="확인 사항 대분류">' + esc(c.label) + "</textarea>" +
+    var d = dday(c.at), kind = checkKind(c);
+    return '<div class="check' + (kind === "preset" ? " is-preset" : "") + '" data-check="' + i + '">' +
+      '<div class="check__kind">' +
+        '<select class="cell-input cell-select" data-cfield="kind" aria-label="확인 사항 구분">' +
+          '<option value="preset"' + (kind === "preset" ? " selected" : "") + ">" + PRESET_LABEL + "</option>" +
+          '<option value="custom"' + (kind === "custom" ? " selected" : "") + ">직접 입력</option>" +
+        "</select>" +
+        '<textarea class="cell-input cell-input--sm" rows="1" data-cfield="label" placeholder="구분 직접 입력" aria-label="확인 사항 구분 직접 입력">' + esc(cellValue(c, "label")) + "</textarea>" +
+      "</div>" +
       '<div class="check__when">' +
-        '<input type="datetime-local" class="cell-input cell-date" data-cfield="at" value="' + esc(c.at) + '" aria-label="확인 사항 일시">' +
+        '<input type="date" class="cell-input cell-date" data-cfield="date" value="' + esc(cellValue(c, "date")) + '" max="9999-12-31" aria-label="확인 사항 날짜">' +
+        '<input type="text" class="cell-input cell-time" data-cfield="time" value="' + esc(cellValue(c, "time")) + '" inputmode="numeric" maxlength="5" placeholder="23:59" autocomplete="off" aria-label="확인 사항 시각 (24시간, 시:분)">' +
         '<span class="dday"' + (d.tone ? ' data-tone="' + d.tone + '"' : "") + ">" + d.text + "</span>" +
         '<button type="button" class="btn btn--icon btn--icon--xs is-danger" data-action="remove-check" aria-label="확인 사항 삭제">' + icon("x") + "</button>" +
       "</div>" +
@@ -898,20 +961,20 @@
     var name = "ext-" + r.id;
     return '<tr class="item' + (r.urgent ? " is-urgent" : "") + '" data-row="' + r.id + '">' +
       '<td class="c-center"><label class="urgent-box" title="마감 임박 표시"><input type="checkbox" data-field="urgent"' + (r.urgent ? " checked" : "") + '><span class="visually-hidden">마감 임박</span></label></td>' +
-      '<td><textarea class="cell-input" rows="1" data-field="cat" placeholder="대분류" aria-label="이벤트 및 단말 대분류">' + esc(r.cat) + "</textarea></td>" +
-      '<td><textarea class="cell-input cell-input--strong" rows="1" data-field="sub" placeholder="소분류" aria-label="이벤트 및 단말 소분류">' + esc(r.sub) + "</textarea></td>" +
-      '<td colspan="2"><div class="checks">' + r.checks.map(checkHTML).join("") +
+      '<td class="g-start g-tint"><textarea class="cell-input" rows="1" data-field="cat" placeholder="대분류" aria-label="이벤트 및 단말 대분류">' + esc(r.cat) + "</textarea></td>" +
+      '<td class="g-tint"><textarea class="cell-input cell-input--strong" rows="1" data-field="sub" placeholder="소분류" aria-label="이벤트 및 단말 소분류">' + esc(r.sub) + "</textarea></td>" +
+      '<td colspan="2" class="g-start"><div class="checks">' + r.checks.map(checkHTML).join("") +
         '<button type="button" class="check-add" data-action="add-check">' + icon("plus") + "확인 사항 추가</button></div></td>" +
-      '<td><textarea class="cell-input cell-input--sm" rows="1" data-field="area" placeholder="적용 영역" aria-label="적용 영역">' + esc(r.area) + "</textarea></td>" +
-      '<td class="c-center"><div class="yn" role="radiogroup" aria-label="기간 연장">' +
+      '<td class="g-start g-tint"><textarea class="cell-input cell-input--sm" rows="1" data-field="area" placeholder="적용 영역" aria-label="적용 영역">' + esc(r.area) + "</textarea></td>" +
+      '<td class="g-start c-center"><div class="yn" role="radiogroup" aria-label="기간 연장">' +
         '<label class="yn__opt yn__opt--y"><input type="radio" name="' + name + '" value="Y" data-field="extend"' + (r.extend === "Y" ? " checked" : "") + "><span>Y</span></label>" +
         '<label class="yn__opt yn__opt--n"><input type="radio" name="' + name + '" value="N" data-field="extend"' + (r.extend === "N" ? " checked" : "") + "><span>N</span></label>" +
       "</div></td>" +
       '<td><textarea class="cell-input" rows="1" data-field="reply" placeholder="연장/종료/추가 내용" aria-label="추가 내용 기재">' + esc(r.reply) + "</textarea></td>" +
-      '<td><textarea class="cell-input" rows="1" data-field="team" placeholder="팀" aria-label="요청자 팀">' + esc(r.team) + "</textarea></td>" +
-      '<td><textarea class="cell-input" rows="1" data-field="owner" placeholder="담당자" aria-label="요청자 담당자">' + esc(r.owner) + "</textarea></td>" +
-      '<td><textarea class="cell-input cell-input--sm" rows="1" data-field="memo" placeholder="비고" aria-label="비고">' + esc(r.memo) + "</textarea></td>" +
-      '<td><div class="row-actions">' +
+      '<td class="g-start g-tint"><textarea class="cell-input" rows="1" data-field="team" placeholder="팀" aria-label="요청자 팀">' + esc(r.team) + "</textarea></td>" +
+      '<td class="g-tint"><textarea class="cell-input" rows="1" data-field="owner" placeholder="담당자" aria-label="요청자 담당자">' + esc(r.owner) + "</textarea></td>" +
+      '<td class="g-start"><textarea class="cell-input cell-input--sm" rows="1" data-field="memo" placeholder="비고" aria-label="비고">' + esc(r.memo) + "</textarea></td>" +
+      '<td class="g-start"><div class="row-actions">' +
         '<button type="button" class="btn btn--icon btn--icon--xs" data-action="row-up" aria-label="위로 이동"' + (idx === 0 ? " disabled" : "") + ">" + icon("up") + "</button>" +
         '<button type="button" class="btn btn--icon btn--icon--xs" data-action="row-down" aria-label="아래로 이동"' + (idx === sec.rows.length - 1 ? " disabled" : "") + ">" + icon("down") + "</button>" +
         '<button type="button" class="btn btn--icon btn--icon--xs is-danger" data-action="row-delete" aria-label="행 삭제">' + icon("trash") + "</button>" +
@@ -1019,13 +1082,17 @@
     var checkEls = tr.querySelectorAll(".check");
     if(checkEls.length !== row.checks.length){ tr.dataset.stale = "1"; return; }
     checkEls.forEach(function(ch, i){
+      var c = row.checks[i];
+      var preset = checkKind(c) === "preset";
+      if(preset !== ch.classList.contains("is-preset") && ch.contains(active)){ tr.dataset.stale = "1"; return; }
+      ch.classList.toggle("is-preset", preset);
       ch.querySelectorAll("[data-cfield]").forEach(function(el){
-        var v = row.checks[i][el.dataset.cfield] || "";
+        var v = cellValue(c, el.dataset.cfield);
         if(el.value === v){ return; }
         if(el === active){ tr.dataset.stale = "1"; return; }
         el.value = v; autosize(el);
-        if(el.dataset.cfield === "at"){ paintDday(el); }
       });
+      paintDday(ch, c.at);
     });
   }
   function patchSection(id){
@@ -1038,14 +1105,20 @@
   }
   sheet.addEventListener("focusout", function(e){
     var tr = e.target.closest && e.target.closest("tr.item");
+    // A half-typed time ("23:5") is never saved; leaving the field puts the saved value back.
+    if(e.target.dataset && e.target.dataset.cfield === "time" && !isTime(e.target.value)){
+      var tc = ctx(e.target);
+      if(tc.row){ e.target.value = cellValue(tc.row.checks[tc.checkIdx], "time"); }
+      e.target.removeAttribute("aria-invalid");
+    }
     if(REMOTE){ scheduleFlush(0); }
     if(!tr || !tr.dataset.stale || (e.relatedTarget && tr.contains(e.relatedTarget))){ return; }
     delete tr.dataset.stale;
     setTimeout(function(){ patchRow(tr.dataset.row); }, 0);
   });
 
-  function paintDday(input){
-    var d = dday(input.value), chip = input.parentNode.querySelector(".dday");
+  function paintDday(checkEl, at){
+    var d = dday(at), chip = checkEl.querySelector(".dday");
     chip.textContent = d.text;
     if(d.tone){ chip.dataset.tone = d.tone; }else{ delete chip.dataset.tone; }
   }
@@ -1077,8 +1150,26 @@
       c.sec[el.dataset.sfield] = el.value;
       store.secChanged(c.sec, [el.dataset.sfield]);
     }else if(el.dataset.cfield && c.row){
-      c.row.checks[c.checkIdx][el.dataset.cfield] = el.value;
-      if(el.dataset.cfield === "at"){ paintDday(el); }
+      var chk = c.row.checks[c.checkIdx], f = el.dataset.cfield, chEl = el.closest(".check");
+      if(f === "kind"){
+        var preset = el.value === "preset";
+        chk.label = preset ? PRESET_LABEL : "";
+        chEl.classList.toggle("is-preset", preset);
+        var labelEl = chEl.querySelector('[data-cfield="label"]');
+        labelEl.value = "";
+        if(!preset){ labelEl.focus(); }
+      }else if(f === "label"){
+        chk.label = el.value;
+      }else{
+        var dateEl = chEl.querySelector('[data-cfield="date"]'), timeEl = chEl.querySelector('[data-cfield="time"]');
+        if(f === "time"){ timeEl.value = maskTime(timeEl.value); }
+        if(f === "date" && dateEl.value && !timeEl.value){ timeEl.value = DEFAULT_TIME; }
+        var ok = isTime(timeEl.value);
+        if(timeEl.value && !ok){ timeEl.setAttribute("aria-invalid", "true"); } else { timeEl.removeAttribute("aria-invalid"); }
+        if(dateEl.value && !ok){ return; }      // wait until HH:MM is complete
+        chk.at = dateEl.value ? dateEl.value + "T" + timeEl.value : "";
+        paintDday(chEl, chk.at);
+      }
       store.rowChanged(c.row, ["checks"]);
     }else if(el.dataset.field && c.row && el.type !== "radio" && el.type !== "checkbox"){
       c.row[el.dataset.field] = el.value;
@@ -1139,10 +1230,10 @@
 
     switch(btn.dataset.action){
       case "add-check":
-        row.checks.push({ label:"", at:"" });
+        row.checks.push(blankCheck());
         store.rowChanged(row, ["checks"]);
         render();
-        focusIn('tr[data-row="' + row.id + '"] .check:last-of-type textarea');
+        focusIn('tr[data-row="' + row.id + '"] .check:last-of-type [data-cfield="date"]');
         break;
       case "remove-check":
         row.checks.splice(c.checkIdx, 1);
@@ -1291,7 +1382,10 @@
 
   // Re-tick the D-day chips once a minute so an open tab doesn't go stale.
   setInterval(function(){
-    sheet.querySelectorAll('input[data-cfield="at"]').forEach(paintDday);
+    sheet.querySelectorAll(".check").forEach(function(ch){
+      var c = ctx(ch);
+      if(c.row && c.row.checks[c.checkIdx]){ paintDday(ch, c.row.checks[c.checkIdx].at); }
+    });
   }, 60000);
 
   // ---------- boot ----------

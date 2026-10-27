@@ -22,7 +22,7 @@ create table if not exists eec_rows (
   urgent      boolean not null default false,          -- 마감 임박 (행 노란색)
   cat         text not null default '',                -- 이벤트 및 단말 · 대분류
   sub         text not null default '',                -- 이벤트 및 단말 · 소분류
-  checks      jsonb not null default '[]'::jsonb,      -- 확인 사항: [{ "label": 대분류, "at": "YYYY-MM-DDTHH:MM" }]
+  checks      jsonb not null default '[]'::jsonb,      -- 확인 사항: [{ "label": 구분("운영 기간" 또는 직접 입력), "at": "YYYY-MM-DDTHH:MM"(24시) }]
   area        text not null default '',                -- 적용 영역
   extend      text not null default '' check (extend in ('', 'Y', 'N')),  -- 기간 연장
   reply       text not null default '',                -- 추가 내용 기재

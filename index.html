@@ -234,13 +234,17 @@
   .title-input[hidden], .notices-input[hidden], .notices[hidden], #docTitle[hidden]{ display:none; }
 
   /* 구분 추가 — sits in the header cell right of 비고 */
+  /* A compact filled pill sized to its label, not a full-width dashed box. */
   .add-sec{
-    display:inline-flex; align-items:center; justify-content:center; gap:3px; width:100%; min-height:40px;
-    border:1px dashed var(--hairline-strong); border-radius: var(--radius-sm); background: var(--surface);
-    color: var(--primary); font-size:11px; font-weight:600; line-height:1.2; cursor:pointer; padding: 2px 4px;
+    display:inline-flex; align-items:center; justify-content:center; gap:3px; height:26px; padding: 0 8px 0 6px;
+    border:none; border-radius:999px; background: var(--primary); color: var(--on-primary);
+    font-size:11px; font-weight:600; letter-spacing:-0.01em; white-space:nowrap; cursor:pointer;
+    box-shadow: 0 1px 2px oklch(24% 0.02 258 / 18%);
+    transition: background-color var(--dur-short) var(--ease-out), transform 100ms var(--ease-out);
   }
-  .add-sec .icon{ width:12px; height:12px; flex-shrink:0; }
-  .add-sec:hover{ background: var(--primary-soft); border-color: var(--primary); }
+  .add-sec .icon{ width:11px; height:11px; flex-shrink:0; stroke-width:2.4; }
+  .add-sec:hover{ background: var(--primary-focus); }
+  .add-sec:active{ transform: translateY(1px); }
   .add-sec:focus-visible{ outline:2px solid var(--primary-focus); outline-offset:1px; }
   .add-sec[hidden]{ display:none; }
 
@@ -304,7 +308,7 @@
     top:0; height:34px; text-align:center; vertical-align:middle;
     font-size:0.8125rem; color: var(--text);
   }
-  .sheet thead tr:nth-child(2) th{ top: 34px; font-size:11px; color: var(--muted); font-weight:500; }
+  .sheet thead tr:nth-child(2) th{ top: 34px; font-size:11px; color: var(--muted); font-weight:500; text-align:center; }
   .sheet thead th.th-group{ border-bottom-color: var(--divider); }
   /* Narrow columns (No., 체크, 담당자 확인) give up the header's side padding to fit. */
   .sheet thead th.th-tight{ padding-left:2px; padding-right:2px; text-align:center; }
@@ -580,7 +584,7 @@
           <th colspan="3" class="th-group g-start g-tint">요청자</th>
           <th rowspan="2" class="g-start">비고</th>
           <th rowspan="2" class="g-start th-tight">
-            <button type="button" class="add-sec" id="addSectionBtn" hidden><svg class="icon"><use href="#i-plus"/></svg>구분<br>추가</button>
+            <button type="button" class="add-sec" id="addSectionBtn" hidden><svg class="icon"><use href="#i-plus"/></svg>구분 추가</button>
             <span class="visually-hidden">행 관리</span>
           </th>
         </tr>
